@@ -667,7 +667,7 @@
 
             // Create camera
             camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(3, 6, 7); // Positioned to view grid from a nice angle
+            camera.position.set(0, 4, 4); // Positioned to view grid from a nice angle
             camera.lookAt(0, 0, 0);
 
             updateLoadingProgress(30);
@@ -676,8 +676,8 @@
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.07;
-            controls.minDistance = 3;
-            controls.maxDistance = 20;
+            controls.minDistance = 4;
+            controls.maxDistance = 15;
             controls.maxPolarAngle = Math.PI / 2 - 0.1; // Prevent camera going below grid
             controls.target.set(0, 0, 0);
 
@@ -1244,7 +1244,6 @@
             return componentData;
         }
 
-        // Add this function to your setupEventListeners function
         function setupIntuitiveTouch() {
             // Only add if touch is available
             if (!('ontouchstart' in window) &&
@@ -2968,16 +2967,41 @@
 
         // Set up UI event listeners
         function setupEventListeners() {
-
             // Touch input support
             setupIntuitiveTouch();
-
+            
+            // Make all dialogs dismissible with a click
+            document.getElementById('level-info').addEventListener('click', function() {
+                this.style.display = 'none';
+            });
+            
+            // Make tutorial dismissible by clicking anywhere
+            document.getElementById('tutorial').addEventListener('click', function(e) {
+                if (e.target !== document.getElementById('close-tutorial')) {
+                    this.style.display = 'none';
+                }
+            });
+            
+            // Make level-complete dismissible by clicking anywhere
+            document.getElementById('level-complete').addEventListener('click', function(e) {
+                if (e.target !== document.getElementById('next-level')) {
+                    this.style.display = 'none';
+                }
+            });
+            
+            // Auto-hide level info after 8 seconds
+            setTimeout(() => {
+                const levelInfo = document.getElementById('level-info');
+                if (levelInfo.style.display !== 'none') {
+                    levelInfo.style.display = 'none';
+                }
+            }, 8000);
+            
             // Inventory item selection
             document.querySelectorAll('.inventory-item').forEach(item => {
                 item.addEventListener('click', () => {
                     // Get component type
                     const componentType = item.getAttribute('data-component');
-
                     // If we have this component in inventory
                     if (inventory[componentType] > 0) {
                         // Toggle selection
@@ -2989,42 +3013,40 @@
                             document.querySelectorAll('.inventory-item').forEach(i => {
                                 i.classList.remove('selected');
                             });
-
                             selectedComponent = componentType;
                             item.classList.add('selected');
                         }
                     }
                 });
             });
-
+            
             // Help button
             document.getElementById('help-button').addEventListener('click', () => {
                 document.getElementById('tutorial').style.display = 'block';
             });
-
+            
             // Close tutorial button
-            document.getElementById('close-tutorial').addEventListener('click', () => {
+            document.getElementById('close-tutorial').addEventListener('click', (e) => {
                 document.getElementById('tutorial').style.display = 'none';
+                e.stopPropagation(); // Prevent the tutorial click handler from firing
             });
-
+            
             // Next level button
-            document.getElementById('next-level').addEventListener('click', () => {
+            document.getElementById('next-level').addEventListener('click', (e) => {
                 // For now, just reload the page
                 window.location.reload();
-
                 // ToDo: load the next level
+                e.stopPropagation(); // Prevent the level-complete click handler from firing
             });
-
+            
             // Window resize handling
             window.addEventListener('resize', () => {
                 // Update camera aspect ratio
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
-
                 // Update renderer size
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 composer.setSize(window.innerWidth, window.innerHeight);
-
                 // Update FXAA pass resolution
                 composer.passes[2].material.uniforms['resolution'].value.set(
                     1 / (window.innerWidth * renderer.getPixelRatio()),
