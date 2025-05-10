@@ -1,0 +1,3486 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Flux - Level 1</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: Arial, sans-serif;
+            color: #fff;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #info {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            z-index: 100;
+            pointer-events: none;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+        }
+
+        #inventory {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(10, 10, 30, 0.7);
+            border: 1px solid rgba(60, 60, 255, 0.5);
+            border-radius: 10px;
+            padding: 10px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+        }
+
+        .inventory-item {
+            width: 60px;
+            height: 60px;
+            border-radius: 5px;
+            background-color: rgba(30, 30, 60, 0.8);
+            border: 2px solid rgba(80, 80, 255, 0.5);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .inventory-item:hover {
+            background-color: rgba(60, 60, 120, 0.8);
+            transform: translateY(-2px);
+        }
+
+        .inventory-item.selected {
+            background-color: rgba(60, 120, 255, 0.6);
+            border-color: rgba(200, 200, 255, 0.9);
+            box-shadow: 0 0 15px rgba(100, 100, 255, 0.7);
+        }
+
+        .inventory-item img {
+            width: 32px;
+            height: 32px;
+            margin-bottom: 5px;
+            filter: brightness(1.5);
+        }
+
+        .inventory-count {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .inventory-name {
+            font-size: 10px;
+            text-align: center;
+        }
+
+        #level-info {
+            position: absolute;
+            top: 50px;
+            left: 20px;
+            background-color: rgba(10, 10, 30, 0.7);
+            border: 1px solid rgba(60, 60, 255, 0.5);
+            border-radius: 10px;
+            padding: 10px;
+            z-index: 100;
+            max-width: 300px;
+        }
+
+        #level-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #88f;
+        }
+
+        #level-description {
+            font-size: 14px;
+            line-height: 1.4;
+            margin-bottom: 15px;
+        }
+
+        #level-objective {
+            font-style: italic;
+            font-size: 12px;
+            color: #aaf;
+        }
+
+        #loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            z-index: 1000;
+        }
+
+        #loading-progress {
+            width: 300px;
+            height: 10px;
+            background-color: rgba(60, 60, 120, 0.5);
+            border-radius: 5px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        #loading-bar {
+            height: 100%;
+            width: 0%;
+            background-color: rgba(100, 100, 255, 0.8);
+            transition: width 0.3s ease-in-out;
+        }
+
+        #help-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(30, 30, 60, 0.7);
+            color: white;
+            border: 1px solid rgba(80, 80, 255, 0.5);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            z-index: 100;
+        }
+
+        #help-button:hover {
+            background-color: rgba(60, 60, 120, 0.7);
+        }
+
+        #tutorial {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(20, 20, 40, 0.95);
+            border: 2px solid rgba(100, 100, 255, 0.7);
+            border-radius: 10px;
+            padding: 20px;
+            z-index: 1001;
+            max-width: 500px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+        }
+
+        #tutorial h2 {
+            color: #88f;
+            margin-top: 0;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #tutorial p {
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        #tutorial ul {
+            margin-bottom: 20px;
+            padding-left: 20px;
+        }
+
+        #tutorial li {
+            margin-bottom: 10px;
+        }
+
+        #close-tutorial {
+            background-color: rgba(60, 60, 255, 0.7);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto 0;
+        }
+
+        #close-tutorial:hover {
+            background-color: rgba(100, 100, 255, 0.7);
+        }
+
+        #level-complete {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(20, 20, 40, 0.95);
+            border: 2px solid rgba(100, 255, 100, 0.7);
+            border-radius: 10px;
+            padding: 20px;
+            z-index: 1001;
+            max-width: 500px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+            text-align: center;
+        }
+
+        #level-complete h2 {
+            color: #8f8;
+            margin-top: 0;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #level-complete p {
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        #next-level {
+            background-color: rgba(60, 255, 60, 0.7);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto 0;
+        }
+
+        #next-level:hover {
+            background-color: rgba(100, 255, 100, 0.7);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loading">
+        <div>Loading Neon Flux</div>
+        <div id="loading-progress">
+            <div id="loading-bar"></div>
+        </div>
+    </div>
+
+    <div id="info">Neon Flux - Level 1: Connect the Circuit</div>
+
+    <div id="level-info">
+        <div id="level-title">Level 1: Connect the Circuit</div>
+        <div id="level-description">Welcome to Neon Flux! In this first level, you'll learn how to build a simple
+            circuit by connecting a power source to an LED.</div>
+        <div id="level-objective">Objective: Connect the battery to the lamp using wires.</div>
+    </div>
+
+    <div id="inventory">
+        <div class="inventory-item" data-component="wire">
+            <div class="inventory-count">10</div>
+            <div class="inventory-name">Wire</div>
+        </div>
+    </div>
+
+    <button id="help-button">How to Play</button>
+
+    <div id="tutorial">
+        <h2>How to Play Neon Flux</h2>
+        <p>Welcome to Neon Flux, a circuit building puzzle game.</p>
+        <p><strong>Basic Controls:</strong></p>
+        <ul>
+            <li><strong>Left Click</strong> on the grid to place selected components</li>
+            <li><strong>Right Click</strong> on a component to rotate it</li>
+            <li><strong>Middle Click</strong> or <strong>Delete</strong> key on a component to remove it</li>
+            <li>Use the <strong>Mouse Wheel</strong> to zoom in/out</li>
+            <li>Hold <strong>Left Mouse Button</strong> and drag to rotate the view</li>
+        </ul>
+        <p><strong>Building Circuits:</strong></p>
+        <ul>
+            <li>Select components from your inventory at the bottom of the screen</li>
+            <li>Place wires to connect power sources to components that need power</li>
+            <li>Components must be directly connected to receive power</li>
+            <li>Some components have specific requirements (energy type, direction, etc.)</li>
+        </ul>
+        <p>Complete the level by successfully powering all required components!</p>
+        <button id="close-tutorial">Got it!</button>
+    </div>
+
+    <div id="level-complete">
+        <h2>Level Complete!</h2>
+        <p>Congratulations! You've successfully connected the circuit and powered the LED.</p>
+        <p>You're ready to move on to more complex challenges!</p>
+        <button id="next-level">Next Level</button>
+    </div>
+
+    <!-- Import Three.js and required extensions -->
+    <script async src="https://cdn.jsdelivr.net/npm/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+
+        // Constants for the game
+        const COMPONENT_POWER_SOURCE = "power_source";
+        const COMPONENT_WIRE = "wire";
+        const COMPONENT_LED = "led";
+
+        const DIRECTION_UP = 0;
+        const DIRECTION_RIGHT = 1;
+        const DIRECTION_DOWN = 2;
+        const DIRECTION_LEFT = 3;
+
+        const ENERGY_RED = 0;
+        const ENERGY_GREEN = 1;
+        const ENERGY_BLUE = 2;
+
+        // Colors
+        const COLOR_RED_NEON = new THREE.Color(1, 0.235, 0.235);
+        const COLOR_GREEN_NEON = new THREE.Color(0.235, 1, 0.235);
+        const COLOR_BLUE_NEON = new THREE.Color(0.235, 0.235, 1);
+        const COLOR_YELLOW_NEON = new THREE.Color(1, 1, 0.235);
+        const COLOR_CYAN_NEON = new THREE.Color(0.235, 1, 1);
+        const COLOR_MAGENTA_NEON = new THREE.Color(1, 0.235, 1);
+        const COLOR_WHITE_NEON = new THREE.Color(0.86, 0.86, 0.86);
+
+        const ENERGY_COLORS = {
+            [ENERGY_RED]: COLOR_RED_NEON,
+            [ENERGY_GREEN]: COLOR_GREEN_NEON,
+            [ENERGY_BLUE]: COLOR_BLUE_NEON
+        };
+
+        const COMPONENT_COLORS = {
+            [COMPONENT_POWER_SOURCE]: COLOR_YELLOW_NEON,
+            [COMPONENT_WIRE]: COLOR_WHITE_NEON,
+            [COMPONENT_LED]: COLOR_MAGENTA_NEON
+        };
+
+        // Grid settings
+        const GRID_SIZE = 5; // 5x5 grid for first level
+        const CELL_SIZE = 1; // Size of each grid cell
+
+        // Game state
+        let scene, camera, renderer, composer;
+        let controls, clock;
+        let gridHelper, gridPlane;
+        let selectedComponent = null;
+        let hoveredCell = { x: -1, y: -1 };
+        let isLevelComplete = false;
+        let isComponentPlaced = false;
+
+        // Component storage
+        let components = [];
+        let energyParticles = [];
+        let energyPaths = [];
+        let inventory = {
+            [COMPONENT_WIRE]: 10
+        };
+
+        // Initialize the application
+        init();
+
+        // Main initialization function
+        function init() {
+            // Start loading sequence
+            updateLoadingProgress(10);
+
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            updateLoadingProgress(20);
+
+            // Create scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0.02, 0.02, 0.04);
+            scene.fog = new THREE.FogExp2(0x000a0f, 0.03);
+
+            // Create camera
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(3, 6, 7); // Positioned to view grid from a nice angle
+            camera.lookAt(0, 0, 0);
+
+            updateLoadingProgress(30);
+
+            // Add orbit controls
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.07;
+            controls.minDistance = 3;
+            controls.maxDistance = 20;
+            controls.maxPolarAngle = Math.PI / 2 - 0.1; // Prevent camera going below grid
+            controls.target.set(0, 0, 0);
+
+            // Initialize clock for animations
+            clock = new THREE.Clock();
+
+            updateLoadingProgress(40);
+
+            // Set up environment
+            setupEnvironment();
+
+            updateLoadingProgress(50);
+
+            // Set up post-processing
+            setupPostProcessing();
+
+            updateLoadingProgress(60);
+
+            // Create initial level components
+            createLevelOneComponents();
+
+            updateLoadingProgress(70);
+
+            // Set up interactive grid
+            setupInteractiveGrid();
+
+            updateLoadingProgress(80);
+
+            // Set up event listeners
+            setupEventListeners();
+
+            //Loading progress bar animation
+            updateLoadingProgress(90);
+
+            // Start animation loop
+            animate();
+
+            // Complete loading
+            updateLoadingProgress(100);
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+            }, 500);
+        }
+
+        // Update loading progress bar
+        function updateLoadingProgress(percent) {
+            document.getElementById('loading-bar').style.width = `${percent}%`;
+        }
+
+        // Set up the scene environment
+        function setupEnvironment() {
+            // Add ambient light
+            const ambientLight = new THREE.AmbientLight(0x222233, 0.5);
+            scene.add(ambientLight);
+
+            // Add directional light for shadows
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            directionalLight.position.set(5, 10, 5);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+
+            // Add subtle point lights for atmosphere
+            const pointLight1 = new THREE.PointLight(0x3333ff, 1, 20);
+            pointLight1.position.set(-8, 5, -8);
+            scene.add(pointLight1);
+
+            const pointLight2 = new THREE.PointLight(0xff3333, 1, 20);
+            pointLight2.position.set(8, 5, 8);
+            scene.add(pointLight2);
+
+            // Create grid
+            createGrid();
+
+            // Create a background environment
+            createBackgroundScene();
+        }
+
+        // Create grid for component placement
+        function createGrid() {
+            // Remove any existing grid
+            scene.children.forEach(obj => {
+                if (obj.name === "GridHelper" || obj.name === "GridPlane" || obj.name === "GridLines") {
+                    scene.remove(obj);
+                }
+            });
+
+            // Create the invisible plane for grid interaction
+            const gridGeometry = new THREE.PlaneGeometry(GRID_SIZE, GRID_SIZE);
+            const gridMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.0,
+                side: THREE.DoubleSide
+            });
+            gridPlane = new THREE.Mesh(gridGeometry, gridMaterial);
+            gridPlane.rotation.x = -Math.PI / 2; // Flat on XZ plane
+            gridPlane.position.y = 0;
+            gridPlane.name = "GridPlane";
+            scene.add(gridPlane);
+
+            // Create a darker base for the grid
+            const baseGeometry = new THREE.PlaneGeometry(GRID_SIZE, GRID_SIZE);
+            const baseMaterial = new THREE.MeshStandardMaterial({
+                color: 0x0a0a15,
+                metalness: 0.8,
+                roughness: 0.5,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            const basePlane = new THREE.Mesh(baseGeometry, baseMaterial);
+            basePlane.rotation.x = -Math.PI / 2; // Flat on XZ plane
+            basePlane.position.y = -0.01; // Slightly below the grid lines
+            basePlane.name = "GridBase";
+            scene.add(basePlane);
+
+            // Create glowing grid lines
+            createGlowingGridLines();
+        }
+
+        function createGlowingGridLines() {
+            // Create a group for all grid lines
+            const gridLinesGroup = new THREE.Group();
+            gridLinesGroup.name = "GridLines";
+
+            // Define colors for the grid
+            const primaryColor = new THREE.Color(0x00ffff); // Cyan
+            const secondaryColor = new THREE.Color(0xff00ff); // Magenta
+
+            // Create line materials with glow
+            const primaryLineMaterial = new THREE.LineBasicMaterial({
+                color: primaryColor,
+                linewidth: 1,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            const secondaryLineMaterial = new THREE.LineBasicMaterial({
+                color: secondaryColor,
+                linewidth: 1,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            // Create a gradient effect by alternating colors
+            const useSecondaryForThisLine = (i) => {
+                return i % 2 === 0; // Alternating pattern
+            };
+
+            // Create grid cell outlines
+            for (let i = 0; i <= GRID_SIZE; i++) {
+                const lineMaterial = useSecondaryForThisLine(i) ? secondaryLineMaterial : primaryLineMaterial;
+
+                // Horizontal lines (along X axis)
+                const xLineGeometry = new THREE.BufferGeometry();
+                const startX = -GRID_SIZE / 2;
+                const endX = GRID_SIZE / 2;
+                const z = i - GRID_SIZE / 2;
+
+                const xLineVertices = new Float32Array([
+                    startX, 0.01, z,
+                    endX, 0.01, z
+                ]);
+
+                xLineGeometry.setAttribute('position', new THREE.BufferAttribute(xLineVertices, 3));
+                const xLine = new THREE.Line(xLineGeometry, lineMaterial);
+                gridLinesGroup.add(xLine);
+
+                // Vertical lines (along Z axis)
+                const zLineGeometry = new THREE.BufferGeometry();
+                const x = i - GRID_SIZE / 2;
+                const startZ = -GRID_SIZE / 2;
+                const endZ = GRID_SIZE / 2;
+
+                const zLineVertices = new Float32Array([
+                    x, 0.01, startZ,
+                    x, 0.01, endZ
+                ]);
+
+                zLineGeometry.setAttribute('position', new THREE.BufferAttribute(zLineVertices, 3));
+                const zLine = new THREE.Line(zLineGeometry, lineMaterial);
+                gridLinesGroup.add(zLine);
+            }
+
+            // Add grid lines group to scene
+            scene.add(gridLinesGroup);
+
+            // Add glow effect by duplicating lines with larger linewidth
+            addGridGlowEffect(gridLinesGroup);
+        }
+
+        function addGridGlowEffect(gridLinesGroup) {
+            // Clone the grid lines and add a subtle glow
+            const glowGroup = gridLinesGroup.clone();
+            glowGroup.name = "GridGlow";
+
+            // Make glow slightly larger and more transparent
+            glowGroup.children.forEach(line => {
+                line.material = line.material.clone();
+                line.material.transparent = true;
+                line.material.opacity = 0.3;
+
+                // Slight offset to avoid z-fighting
+                line.position.y += 0.001;
+            });
+
+            scene.add(glowGroup);
+
+            // Add pulsing animation to the glow
+            glowGroup.userData = {
+                originalOpacity: 0.3,
+                pulseFactor: 0
+            };
+
+            // Add to animation loop (addPulsingGridGlowToAnimationLoop function implementation below)
+            addPulsingGridGlowToAnimationLoop();
+        }
+
+        function addPulsingGridGlowToAnimationLoop() {
+            // Store original animate function
+            const originalAnimate = animate;
+
+            // animate
+            window.animate = function () {
+                // Call original animation function first
+                originalAnimate();
+
+                // Add grid glow pulsing effect
+                const glowGroup = scene.getObjectByName("GridGlow");
+                if (glowGroup && glowGroup.userData) {
+                    const time = Date.now() * 0.001; // Time in seconds
+                    const { originalOpacity, pulseFactor } = glowGroup.userData;
+
+                    // Create a subtle pulsing effect
+                    const pulse = 0.7 + 0.3 * Math.sin(time * 0.5 + pulseFactor);
+
+                    // Apply to all glow lines
+                    glowGroup.children.forEach(line => {
+                        if (line.material) {
+                            line.material.opacity = originalOpacity * pulse;
+                        }
+                    });
+                }
+            };
+        }
+
+        // Create a stylized background
+        function createBackgroundScene() {
+            // Add a ground plane
+            const groundGeometry = new THREE.PlaneGeometry(100, 100);
+            const groundMaterial = new THREE.MeshStandardMaterial({
+                color: 0x0a0a15,
+                metalness: 0.8,
+                roughness: 0.5
+            });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -0.01; // Slightly below grid to avoid z-fighting
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            // Create a distant cityscape
+            const cityscape = new THREE.Group();
+            cityscape.position.y = -0.5;
+
+            // Create buildings with neon outlines
+            for (let i = 0; i < 60; i++) {
+                const height = 2 + Math.random() * 10;
+                const width = 1 + Math.random() * 3;
+                const depth = 1 + Math.random() * 3;
+
+                const buildingGeometry = new THREE.BoxGeometry(width, height, depth);
+                const buildingMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x0a0a15,
+                    metalness: 0.9,
+                    roughness: 0.4
+                });
+                const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
+
+                // Position buildings in a circular pattern around the scene
+                const distance = 20 + Math.random() * 15;
+                const angle = Math.random() * Math.PI * 2;
+                building.position.set(
+                    Math.cos(angle) * distance,
+                    height / 2,
+                    Math.sin(angle) * distance
+                );
+
+                cityscape.add(building);
+
+                // Add neon outlines to some buildings
+                if (Math.random() > 0.6) {
+                    const edgesGeometry = new THREE.EdgesGeometry(buildingGeometry);
+                    const color = [COLOR_RED_NEON, COLOR_BLUE_NEON, COLOR_GREEN_NEON, COLOR_CYAN_NEON, COLOR_MAGENTA_NEON][Math.floor(Math.random() * 5)];
+                    const edgesMaterial = new THREE.LineBasicMaterial({
+                        color: color,
+                        transparent: true,
+                        opacity: 0.7
+                    });
+                    const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+                    edges.position.copy(building.position);
+                    edges.scale.set(1.01, 1.01, 1.01); // Slightly larger to avoid z-fighting
+                    cityscape.add(edges);
+
+                    // Add a point light inside some buildings for glow
+                    if (Math.random() > 0.7) {
+                        const light = new THREE.PointLight(color, 1, 5);
+                        light.position.copy(building.position);
+                        light.position.y += height / 4;
+                        cityscape.add(light);
+                    }
+                }
+            }
+
+            scene.add(cityscape);
+        }
+
+        // Set up post-processing effects
+        function setupPostProcessing() {
+            composer = new EffectComposer(renderer);
+
+            // Standard render pass
+            const renderPass = new RenderPass(scene, camera);
+            composer.addPass(renderPass);
+
+            // Unreal Bloom pass for the neon glow
+            const bloomPass = new UnrealBloomPass(
+                new THREE.Vector2(window.innerWidth, window.innerHeight),
+                1.5,    // strength
+                0.4,    // radius
+                0.85    // threshold
+            );
+            composer.addPass(bloomPass);
+
+            // Anti-aliasing pass
+            const fxaaPass = new ShaderPass(FXAAShader);
+            fxaaPass.material.uniforms['resolution'].value.set(
+                1 / (window.innerWidth * renderer.getPixelRatio()),
+                1 / (window.innerHeight * renderer.getPixelRatio())
+            );
+            composer.addPass(fxaaPass);
+        }
+
+        // Create initial level components
+        function createLevelOneComponents() {
+            // Create power source (battery)
+            createComponent(COMPONENT_POWER_SOURCE, 0, 2, DIRECTION_RIGHT, true, ENERGY_RED, false);
+
+            // Create LED (lamp)
+            createComponent(COMPONENT_LED, 4, 2, DIRECTION_RIGHT, false, ENERGY_RED, false);
+
+            // Highlights connection pins on grid
+            highlightConnectionPoints();
+        }
+
+        // Create component at grid position
+        function createComponent(type, gridX, gridZ, direction, energized = false, energyType = ENERGY_RED, isPlacedByPlayer = true) {
+            // Calculate world position from grid position
+            const worldX = gridX - Math.floor(GRID_SIZE / 2);
+            const worldZ = gridZ - Math.floor(GRID_SIZE / 2);
+
+            // Create component group
+            const group = new THREE.Group();
+            group.position.set(worldX, 0, worldZ);
+
+            // Store component data
+            const componentData = {
+                type: type,
+                gridX: gridX,
+                gridZ: gridZ,
+                direction: direction,
+                energized: energized,
+                energyType: energyType,
+                object3D: group,
+                isPlacedByPlayer: isPlacedByPlayer
+            };
+
+            // Add component visuals based on type
+            const baseColor = COMPONENT_COLORS[type];
+            const glowColor = energized ? ENERGY_COLORS[energyType] : baseColor;
+
+            // Common material properties
+            const baseMaterial = new THREE.MeshStandardMaterial({
+                color: baseColor,
+                metalness: 0.8,
+                roughness: 0.2,
+                emissive: baseColor,
+                emissiveIntensity: 0.2
+            });
+
+            const glowMaterial = new THREE.MeshStandardMaterial({
+                color: glowColor,
+                metalness: 0.8,
+                roughness: 0.2,
+                emissive: glowColor,
+                emissiveIntensity: energized ? 0.8 : 0.3
+            });
+
+            // Create 3D model based on component type
+            switch (type) {
+                case COMPONENT_POWER_SOURCE:
+                    // Power source as a cube with a glowing sphere
+                    const baseGeometry = new THREE.BoxGeometry(0.8, 0.4, 0.8);
+                    const base = new THREE.Mesh(baseGeometry, baseMaterial);
+                    base.position.y = 0.2;
+                    base.castShadow = true;
+                    base.receiveShadow = true;
+                    group.add(base);
+
+                    const coreGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+                    const core = new THREE.Mesh(coreGeometry, glowMaterial);
+                    core.position.y = 0.45;
+                    group.add(core);
+
+                    // Add output connector pin in facing direction with matching energy color
+                    const outputColor = new THREE.Color(ENERGY_COLORS[energyType || ENERGY_RED]);
+                    const outputGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.4, 8);
+
+                    // The whole group will be rotated based on component direction
+                    const outputMaterial = new THREE.MeshStandardMaterial({
+                        color: outputColor,
+                        metalness: 0.9,
+                        roughness: 0.2,
+                        emissive: outputColor,
+                        emissiveIntensity: 0.7
+                    });
+
+                    const outputPin = new THREE.Mesh(outputGeometry, outputMaterial);
+                    // Always place at local +Z since group will be rotated
+                    outputPin.position.set(0, 0.3, 0.4);
+                    outputPin.rotation.x = Math.PI / 2; // Lay the pin flat
+                    group.add(outputPin);
+
+                    // Add a point light
+                    if (energized) {
+                        const light = new THREE.PointLight(
+                            new THREE.Color(ENERGY_COLORS[energyType]),
+                            1,
+                            3
+                        );
+                        light.position.y = 0.45;
+                        group.add(light);
+                    }
+                    break;
+
+                case COMPONENT_WIRE:
+                    // Wire as a tube
+                    const wireGeometry = new THREE.CylinderGeometry(0.08, 0.08, CELL_SIZE, 8);
+
+                    // Wire orientation
+                    if (direction % 2 === 0) { // Vertical (UP/DOWN)
+                        wireGeometry.rotateX(Math.PI / 2); // Rotate for vertical orientation
+                    } else { // Horizontal (LEFT/RIGHT)
+                        wireGeometry.rotateZ(Math.PI / 2); // Rotate for horizontal orientation
+                    }
+
+                    const wire = new THREE.Mesh(wireGeometry, glowMaterial);
+                    group.add(wire);
+                    break;
+
+
+                case COMPONENT_LED:
+                    // LED base as a cylinder
+                    const ledBase = new THREE.CylinderGeometry(0.25, 0.25, 0.2, 16);
+                    const ledBaseMesh = new THREE.Mesh(ledBase, baseMaterial);
+                    ledBaseMesh.position.y = 0.1;
+                    ledBaseMesh.castShadow = true;
+                    ledBaseMesh.receiveShadow = true;
+                    group.add(ledBaseMesh);
+
+                    // LED top as a cone
+                    const ledTop = new THREE.ConeGeometry(0.25, 0.3, 16);
+                    ledTop.translate(0, 0.25, 0);
+                    const ledTopMesh = new THREE.Mesh(ledTop, glowMaterial);
+                    ledTopMesh.position.y = 0.2;
+                    group.add(ledTopMesh);
+
+                    // Add input pin matching the required energy type color
+                    const pinColor = new THREE.Color(ENERGY_COLORS[energyType || ENERGY_RED]);
+
+                    // Create pin cylinder
+                    const pinGeometry = new THREE.CylinderGeometry(0.06, 0.06, 0.3, 8);
+
+                    // Create pin material with the appropriate color
+                    const pinMaterial = new THREE.MeshStandardMaterial({
+                        color: pinColor,
+                        metalness: 0.9,
+                        roughness: 0.2,
+                        emissive: pinColor,
+                        emissiveIntensity: 0.5
+                    });
+
+                    const pinMesh = new THREE.Mesh(pinGeometry, pinMaterial);
+
+                    // Position pin at the back of the LED (opposite to facing direction)
+                    pinMesh.position.set(0, 0.2, -0.4);
+                    pinMesh.rotation.x = Math.PI / 2; // Lay the pin flat
+                    group.add(pinMesh);
+
+                    // Add a point light if energized
+                    if (energized) {
+                        const light = new THREE.PointLight(
+                            new THREE.Color(ENERGY_COLORS[energyType]),
+                            1,
+                            2
+                        );
+                        light.position.y = 0.5;
+                        group.add(light);
+                    }
+                    break;
+            }
+            // Rotate the entire group based on direction
+            if (type !== COMPONENT_WIRE) {
+                group.rotation.y = direction * Math.PI / 2;
+            }
+
+            // Add to scene and component list
+            scene.add(group);
+            components.push(componentData);
+
+            return componentData;
+        }
+
+        // Set up interactive grid
+        function setupInteractiveGrid() {
+            // Create a raycaster for mouse interaction
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+
+            // Event listener for mouse movement
+            window.addEventListener('mousemove', (event) => {
+                // Update mouse position
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+                // Cast ray
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(gridPlane);
+
+                if (intersects.length > 0) {
+                    // Get intersection point on grid
+                    const point = intersects[0].point;
+
+                    // Convert to grid coordinates
+                    const gridX = Math.floor(point.x + GRID_SIZE / 2);
+                    const gridZ = Math.floor(point.z + GRID_SIZE / 2);
+
+                    // Check if within grid bounds
+                    if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
+                        // Update hovered cell
+                        hoveredCell = { x: gridX, y: gridZ };
+
+                        // Highlight the hovered cell
+                        highlightCell(gridX, gridZ);
+                    }
+                }
+            });
+
+            // Event listener for mouse click
+            window.addEventListener('click', (event) => {
+                // Ignore clicks on UI elements
+                if (event.target !== renderer.domElement) return;
+
+                // Cast ray
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(gridPlane);
+
+                if (intersects.length > 0) {
+                    // Get intersection point on grid
+                    const point = intersects[0].point;
+
+                    // Convert to grid coordinates
+                    const gridX = Math.floor(point.x + GRID_SIZE / 2);
+                    const gridZ = Math.floor(point.z + GRID_SIZE / 2);
+
+                    // Check if within grid bounds
+                    if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
+                        // Place component if one is selected
+                        if (selectedComponent === COMPONENT_WIRE) {
+                            placeWire(gridX, gridZ);
+                        }
+                    }
+                }
+            });
+
+            // Event listener for right click (rotate)
+            window.addEventListener('contextmenu', (event) => {
+                event.preventDefault();
+
+                // Cast ray
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(gridPlane);
+
+                if (intersects.length > 0) {
+                    // Get intersection point on grid
+                    const point = intersects[0].point;
+
+                    // Convert to grid coordinates
+                    const gridX = Math.floor(point.x + GRID_SIZE / 2);
+                    const gridZ = Math.floor(point.z + GRID_SIZE / 2);
+
+                    // Check if within grid bounds
+                    if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
+                        // Rotate component at this position
+                        rotateComponentAt(gridX, gridZ);
+                    }
+                }
+            });
+
+            // Event listener for middle click or delete key (remove)
+            window.addEventListener('auxclick', (event) => {
+                if (event.button === 1) { // Middle mouse button
+                    // Cast ray
+                    raycaster.setFromCamera(mouse, camera);
+                    const intersects = raycaster.intersectObject(gridPlane);
+
+                    if (intersects.length > 0) {
+                        // Get intersection point on grid
+                        const point = intersects[0].point;
+
+                        // Convert to grid coordinates
+                        const gridX = Math.floor(point.x + GRID_SIZE / 2);
+                        const gridZ = Math.floor(point.z + GRID_SIZE / 2);
+
+                        // Check if within grid bounds
+                        if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
+                            // Remove component at this position
+                            removeComponentAt(gridX, gridZ);
+                        }
+                    }
+                }
+            });
+
+            // Delete key for removing components
+            window.addEventListener('keydown', (event) => {
+                if (event.key === 'Delete') {
+                    // Cast ray
+                    raycaster.setFromCamera(mouse, camera);
+                    const intersects = raycaster.intersectObject(gridPlane);
+
+                    if (intersects.length > 0) {
+                        // Get intersection point on grid
+                        const point = intersects[0].point;
+
+                        // Convert to grid coordinates
+                        const gridX = Math.floor(point.x + GRID_SIZE / 2);
+                        const gridZ = Math.floor(point.z + GRID_SIZE / 2);
+
+                        // Check if within grid bounds
+                        if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
+                            // Remove component at this position
+                            removeComponentAt(gridX, gridZ);
+                        }
+                    }
+                }
+            });
+        }
+
+        function highlightConnectionPoints() {
+            // Remove any existing highlights
+            scene.children.forEach(obj => {
+                if (obj.name && obj.name.startsWith('ConnectionPoint')) {
+                    scene.remove(obj);
+                }
+            });
+
+            // Find all components that can be connected to
+            components.forEach(component => {
+                // Skip if it's a placed wire
+                if (component.type === COMPONENT_WIRE && component.isPlacedByPlayer) return;
+
+                const connectionPoints = [];
+
+                // Determine which directions this component can connect from
+                if (component.type === COMPONENT_POWER_SOURCE) {
+                    // Power source connects in its facing direction
+                    const dir = component.direction;
+                    const offset = directionToOffset(dir);
+                    connectionPoints.push({
+                        x: component.gridX + offset.x,
+                        z: component.gridZ + offset.y,
+                        color: ENERGY_COLORS[component.energyType || ENERGY_RED]
+                    });
+                }
+                else if (component.type === COMPONENT_LED) {
+                    // LED connects from the opposite of its facing direction
+                    const dir = (component.direction + 2) % 4; // Opposite direction
+                    const offset = directionToOffset(dir);
+                    connectionPoints.push({
+                        x: component.gridX + offset.x,
+                        z: component.gridZ + offset.y,
+                        color: ENERGY_COLORS[component.energyType || ENERGY_RED]
+                    });
+                }
+
+                // Create visual indicators for valid connection points
+                connectionPoints.forEach(point => {
+                    // Check if this point is within grid bounds
+                    if (point.x >= 0 && point.x < GRID_SIZE && point.z >= 0 && point.z < GRID_SIZE) {
+                        // Check if cell is empty
+                        if (!getComponentAt(point.x, point.z)) {
+                            // Create a subtle highlight
+                            const geometry = new THREE.RingGeometry(0.25, 0.3, 16);
+                            geometry.rotateX(Math.PI / 2); // Flat on ground
+
+                            const material = new THREE.MeshBasicMaterial({
+                                color: point.color,
+                                transparent: true,
+                                opacity: 0.3,
+                                side: THREE.DoubleSide
+                            });
+
+                            const highlight = new THREE.Mesh(geometry, material);
+
+                            // Position at grid cell
+                            const worldX = point.x - Math.floor(GRID_SIZE / 2);
+                            const worldZ = point.z - Math.floor(GRID_SIZE / 2);
+                            highlight.position.set(worldX, 0.01, worldZ);
+
+                            highlight.name = `ConnectionPoint_${point.x}_${point.z}`;
+                            scene.add(highlight);
+
+                            // Add pulsing animation
+                            highlight.userData = {
+                                originalOpacity: 0.3,
+                                pulseFactor: Math.random() * Math.PI * 2 // Random phase
+                            };
+                        }
+                    }
+                });
+            });
+        }
+
+        // Highlight a cell on the grid
+        function highlightCell(gridX, gridZ) {
+            // Remove any existing highlight
+            const existingHighlight = scene.getObjectByName("GridHighlight");
+            if (existingHighlight) {
+                scene.remove(existingHighlight);
+            }
+
+            // Check if within grid bounds
+            if (gridX < 0 || gridX >= GRID_SIZE || gridZ < 0 || gridZ >= GRID_SIZE) {
+                return;
+            }
+
+            // Create a new highlight
+            const highlightGeometry = new THREE.PlaneGeometry(0.98, 0.98); // Slightly smaller than cell
+            const highlightMaterial = new THREE.MeshBasicMaterial({
+                color: 0xff00ff, // Magenta
+                transparent: true,
+                opacity: 0.2,
+                side: THREE.DoubleSide
+            });
+
+            const highlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
+            highlight.rotation.x = -Math.PI / 2; // Flat on XZ plane
+
+            // Position at grid cell
+            const worldX = gridX - Math.floor(GRID_SIZE / 2);
+            const worldZ = gridZ - Math.floor(GRID_SIZE / 2);
+            highlight.position.set(worldX, 0.02, worldZ); // Slightly above grid
+
+            highlight.name = "GridHighlight";
+            scene.add(highlight);
+
+            // Add glowing outline around the highlight
+            const edgesGeometry = new THREE.EdgesGeometry(highlightGeometry);
+            const edgesMaterial = new THREE.LineBasicMaterial({
+                color: 0xff00ff, // Magenta
+                transparent: true,
+                opacity: 0.6
+            });
+
+            const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+            edges.rotation.x = -Math.PI / 2; // Flat on XZ plane
+            edges.position.set(worldX, 0.025, worldZ); // Just above the highlight
+            edges.name = "GridHighlightEdges";
+            scene.add(edges);
+
+            // If we have a selected component, show preview while moving mouse over grid
+            if (selectedComponent === COMPONENT_WIRE) {
+                showComponentPreview(gridX, gridZ, COMPONENT_WIRE);
+            }
+        }
+
+        // Show a preview of the component at grid position
+        function showComponentPreview(gridX, gridZ, type) {
+            // Remove any existing preview
+            const existingPreview = scene.getObjectByName("ComponentPreview");
+            if (existingPreview) {
+                scene.remove(existingPreview);
+            }
+
+            // Check if cell is occupied
+            if (getComponentAt(gridX, gridZ)) {
+                return; // Don't show preview if cell is occupied
+            }
+
+            // Create preview based on component type
+            const worldX = gridX - Math.floor(GRID_SIZE / 2);
+            const worldZ = gridZ - Math.floor(GRID_SIZE / 2);
+
+            let previewMesh;
+
+            switch (type) {
+                case COMPONENT_WIRE:
+                    // Wire preview
+                    const wireGeometry = new THREE.CylinderGeometry(0.08, 0.08, CELL_SIZE, 8);
+
+                    const wireMaterial = new THREE.MeshBasicMaterial({
+                        color: COMPONENT_COLORS[COMPONENT_WIRE],
+                        transparent: true,
+                        opacity: 0.5
+                    });
+
+                    // Determine best direction automatically based on neighbors
+                    const bestDirection = determineBestWireDirection(gridX, gridZ);
+
+
+                    if (bestDirection % 2 === 0) { // Vertical (UP/DOWN)
+                        wireGeometry.rotateX(Math.PI / 2);
+                    } else { // Horizontal (LEFT/RIGHT)
+                        wireGeometry.rotateZ(Math.PI / 2);
+                    }
+
+                    previewMesh = new THREE.Mesh(wireGeometry, wireMaterial);
+                    break;
+            }
+
+            if (previewMesh) {
+                // Create preview group
+                const previewGroup = new THREE.Group();
+                previewGroup.position.set(worldX, 0, worldZ);
+                previewGroup.add(previewMesh);
+                previewGroup.name = "ComponentPreview";
+
+                // Store direction for later use
+                const direction = determineBestWireDirection(gridX, gridZ);
+                previewGroup.userData = { direction: direction };
+
+                scene.add(previewGroup);
+            }
+        }
+
+        // Determine the best direction for a wire based on neighboring components
+        function determineBestWireDirection(gridX, gridZ) {
+            // Check all four directions for components
+            const neighbors = {
+                [DIRECTION_UP]: getComponentAt(gridX, gridZ - 1),
+                [DIRECTION_RIGHT]: getComponentAt(gridX + 1, gridZ),
+                [DIRECTION_DOWN]: getComponentAt(gridX, gridZ + 1),
+                [DIRECTION_LEFT]: getComponentAt(gridX - 1, gridZ)
+            };
+
+            // If there are components in both horizontal directions, use horizontal wire
+            if (neighbors[DIRECTION_LEFT] && neighbors[DIRECTION_RIGHT]) {
+                return DIRECTION_RIGHT; // Horizontal wire (DIRECTION_RIGHT indicates horizontal orientation)
+            }
+
+            // If there are components in both vertical directions, use vertical wire
+            if (neighbors[DIRECTION_UP] && neighbors[DIRECTION_DOWN]) {
+                return DIRECTION_UP; // Vertical wire (DIRECTION_UP indicates vertical orientation)
+            }
+
+            // If there's a component to the left or right, use horizontal wire
+            if (neighbors[DIRECTION_LEFT] || neighbors[DIRECTION_RIGHT]) {
+                return DIRECTION_RIGHT; // Horizontal wire
+            }
+
+            // If there's a component above or below, use vertical wire
+            if (neighbors[DIRECTION_UP] || neighbors[DIRECTION_DOWN]) {
+                return DIRECTION_UP; // Vertical wire
+            }
+
+            // Default: horizontal wire
+            return DIRECTION_RIGHT;
+        }
+
+        // Place a wire at the grid position
+        function placeWire(gridX, gridZ) {
+            // Check if we have wires in inventory
+            if (inventory[COMPONENT_WIRE] <= 0) {
+                return; // Out of wires
+            }
+
+            // Check if cell is already occupied
+            if (getComponentAt(gridX, gridZ)) {
+                return; // Cell is occupied
+            }
+
+            // Get the preview direction if it exists
+            let direction = DIRECTION_RIGHT; // Default
+            const preview = scene.getObjectByName("ComponentPreview");
+            if (preview && preview.userData && preview.userData.direction !== undefined) {
+                direction = preview.userData.direction;
+            } else {
+                // Determine best direction based on neighbors
+                direction = determineBestWireDirection(gridX, gridZ);
+            }
+
+            // Create wire component - the direction value determines the wire orientation
+            createComponent(COMPONENT_WIRE, gridX, gridZ, direction, false, ENERGY_RED, true);
+
+            // Decrease inventory
+            inventory[COMPONENT_WIRE]--;
+            updateInventoryDisplay();
+
+            // Update energy flow
+            calculateEnergyFlow();
+
+            // Check if level is complete
+            checkLevelComplete();
+
+            // Highlights connection pins on grid
+            highlightConnectionPoints();
+        }
+
+        // Rotate the component at a grid position
+        function rotateComponentAt(gridX, gridZ) {
+            console.log("Rotating component at", gridX, gridZ);
+
+            // Find component at this position
+            const component = getComponentAt(gridX, gridZ);
+
+            if (component) {
+                console.log("Found component:", component.type, "player placed:", component.isPlacedByPlayer);
+
+                // Allow rotations of all components, not just player-placed ones
+                if (component.type === COMPONENT_WIRE) {
+                    // For wires, toggle between horizontal and vertical orientation
+                    component.direction = (component.direction % 2 === 0) ? 1 : 0;
+
+                    // Get the 3D object
+                    const obj = component.object3D;
+
+                    // Remove old wire mesh
+                    while (obj.children.length > 0) {
+                        obj.remove(obj.children[0]);
+                    }
+
+                    // Create new wire mesh with correct orientation
+                    const wireGeometry = new THREE.CylinderGeometry(0.08, 0.08, CELL_SIZE, 8);
+
+                    // Apply correct rotation based on new direction
+                    if (component.direction % 2 === 0) { // Vertical
+                        wireGeometry.rotateX(Math.PI / 2); // Match creation and preview rotations
+                    } else { // Horizontal
+                        wireGeometry.rotateZ(Math.PI / 2); // Match creation and preview rotations
+                    }
+
+                    // Get material based on energized state
+                    const color = component.energized ?
+                        ENERGY_COLORS[component.energyType] :
+                        COMPONENT_COLORS[component.type];
+
+                    const material = new THREE.MeshStandardMaterial({
+                        color: color,
+                        metalness: 0.8,
+                        roughness: 0.2,
+                        emissive: color,
+                        emissiveIntensity: component.energized ? 0.8 : 0.3
+                    });
+
+                    const wireMesh = new THREE.Mesh(wireGeometry, material);
+                    obj.add(wireMesh);
+                } else {
+                    // For other components, rotate direction and update 3D model rotation
+                    component.direction = (component.direction + 1) % 4;
+                    component.object3D.rotation.y = component.direction * Math.PI / 2;
+                }
+
+                // Update energy flow
+                calculateEnergyFlow();
+
+                // Check if level is complete
+                checkLevelComplete();
+
+                // Update connection highlights
+                highlightConnectionPoints();
+            }
+        }
+
+        // Remove a component at a grid position
+        function removeComponentAt(gridX, gridZ) {
+            // Find component at this position
+            const component = getComponentAt(gridX, gridZ);
+
+            if (component && component.isPlacedByPlayer) {
+                // Remove from scene
+                scene.remove(component.object3D);
+
+                // Remove from components list
+                const index = components.findIndex(c => c.gridX === gridX && c.gridZ === gridZ);
+                if (index !== -1) {
+                    components.splice(index, 1);
+                }
+
+                // Increase inventory
+                inventory[component.type]++;
+                updateInventoryDisplay();
+
+                // Update energy flow
+                calculateEnergyFlow();
+
+                // Remove highlights from connection pins on grid
+                highlightConnectionPoints();
+            }
+        }
+
+        // Get component at grid position
+        function getComponentAt(gridX, gridZ) {
+            return components.find(component =>
+                component.gridX === gridX &&
+                component.gridZ === gridZ
+            );
+        }
+
+        // Calculate energy flow through the circuit
+        function calculateEnergyFlow() {
+            console.log("Calculating energy flow...");
+
+            // First, reset all components to non-energized state
+            components.forEach(component => {
+                if (component.type !== COMPONENT_POWER_SOURCE) { // Don't reset power sources
+                    component.energized = false;
+
+                    // Update visual appearance
+                    updateComponentEnergizedState(component);
+                }
+            });
+
+            // Clear existing energy paths
+            clearEnergyPaths();
+
+            // Find all power sources
+            const powerSources = components.filter(c => c.type === COMPONENT_POWER_SOURCE);
+
+            // Process energy flow from each source
+            powerSources.forEach(source => {
+                processEnergyFromSource(source);
+            });
+
+            // Create energy flow animations
+            createEnergyFlowAnimations();
+
+            // Debug info
+            console.log("Energy flow calculation complete");
+            const energizedCount = components.filter(c => c.energized).length;
+            console.log(`Energized components: ${energizedCount}/${components.length}`);
+
+            // Debug LEDs specifically
+            const leds = components.filter(c => c.type === COMPONENT_LED);
+            leds.forEach((led, i) => {
+                console.log(`LED ${i + 1}: energized=${led.energized}`);
+            });
+        }
+
+
+        // Process energy flow from a power source
+        function processEnergyFromSource(source) {
+            console.log(`Processing energy from source at (${source.gridX}, ${source.gridZ})`);
+
+            // Get the direction the source is facing
+            const direction = source.direction;
+
+            // Get the neighboring cell in that direction
+            const nextX = source.gridX + directionToOffset(direction).x;
+            const nextZ = source.gridZ + directionToOffset(direction).y;
+
+            // Check if there's a component there
+            const nextComponent = getComponentAt(nextX, nextZ);
+            if (nextComponent) {
+                // Check if component can receive energy from this direction
+                const oppositeDirection = (direction + 2) % 4;
+                if (canAcceptEnergyFromDirection(nextComponent, oppositeDirection)) {
+                    // Energize the component
+                    energizeComponent(nextComponent, source.energyType);
+
+                    // Add energy path
+                    addEnergyPath(source.gridX, source.gridZ, nextX, nextZ, source.energyType);
+
+                    // Continue energy flow
+                    propagateEnergy(nextComponent);
+                } else {
+                    console.log(`Component at (${nextX}, ${nextZ}) cannot accept energy from direction ${oppositeDirection}`);
+                }
+            } else {
+                console.log(`No component at (${nextX}, ${nextZ})`);
+            }
+        }
+
+        // Propagate energy through a component
+        function propagateEnergy(component) {
+            console.log(`Propagating energy through ${component.type} at (${component.gridX}, ${component.gridZ})`);
+
+            // Skip if component is a LED (end point)
+            if (component.type === COMPONENT_LED) {
+                console.log("LED reached - energy flow ends here");
+                return;
+            }
+
+            // Get output directions based on component type and direction
+            let outputDirections = [];
+
+            if (component.type === COMPONENT_WIRE) {
+                // Wire output depends on orientation
+                if (component.direction % 2 === 0) { // Vertical (UP/DOWN)
+                    outputDirections = [DIRECTION_UP, DIRECTION_DOWN];
+                    console.log("Wire is vertical - can output UP or DOWN");
+                } else { // Horizontal (LEFT/RIGHT)
+                    outputDirections = [DIRECTION_LEFT, DIRECTION_RIGHT];
+                    console.log("Wire is horizontal - can output LEFT or RIGHT");
+                }
+            } else if (component.type === COMPONENT_POWER_SOURCE) {
+                // Power sources output in their facing direction
+                outputDirections = [component.direction];
+                console.log(`Power source outputs in direction ${component.direction}`);
+            }
+
+            // Process each output direction
+            outputDirections.forEach(outDirection => {
+                // Get the neighboring cell in that direction
+                const nextX = component.gridX + directionToOffset(outDirection).x;
+                const nextZ = component.gridZ + directionToOffset(outDirection).y;
+
+                console.log(`Checking neighbor at (${nextX}, ${nextZ}) in direction ${outDirection}`);
+
+                // Check if there's a component there
+                const nextComponent = getComponentAt(nextX, nextZ);
+                if (nextComponent) {
+                    // Check if component can receive energy from this direction
+                    const oppositeDirection = (outDirection + 2) % 4;
+
+                    console.log(`Found ${nextComponent.type} with direction ${nextComponent.direction}`);
+                    console.log(`Checking if it can accept energy from ${oppositeDirection}`);
+
+                    const canAccept = canAcceptEnergyFromDirection(nextComponent, oppositeDirection);
+                    console.log(`Can accept: ${canAccept}`);
+
+                    if (canAccept) {
+                        // Skip if already energized to prevent loops
+                        if (!nextComponent.energized) {
+                            // Energize the component
+                            energizeComponent(nextComponent, component.energyType);
+
+                            // Add energy path
+                            addEnergyPath(component.gridX, component.gridZ, nextX, nextZ, component.energyType);
+
+                            // Continue energy flow
+                            propagateEnergy(nextComponent);
+                        } else {
+                            console.log("Component already energized - skipping to prevent loops");
+                        }
+                    }
+                } else {
+                    console.log("No component found in this direction");
+                }
+            });
+        }
+
+        function visualizeConnections() {
+            // Remove existing debug visualizations
+            scene.children.forEach(obj => {
+                if (obj.name && obj.name.startsWith('DebugConnection')) {
+                    scene.remove(obj);
+                }
+            });
+
+            // Get all components
+            components.forEach(component => {
+                const worldX = component.gridX - Math.floor(GRID_SIZE / 2);
+                const worldZ = component.gridZ - Math.floor(GRID_SIZE / 2);
+
+                // Create a sphere at component location
+                const sphereGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+                const sphereMaterial = new THREE.MeshBasicMaterial({
+                    color: component.energized ? 0x00ff00 : 0xff0000
+                });
+                const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                sphere.position.set(worldX, 0.5, worldZ);
+                sphere.name = `DebugConnection_${component.gridX}_${component.gridZ}`;
+                scene.add(sphere);
+
+                // Add text label
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 128;
+                const context = canvas.getContext('2d');
+                context.font = '24px Arial';
+                context.fillStyle = 'white';
+                context.textAlign = 'center';
+                context.fillText(`${component.type}`, 128, 64);
+                context.fillText(`Dir: ${component.direction}`, 128, 100);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const labelMaterial = new THREE.SpriteMaterial({ map: texture });
+                const label = new THREE.Sprite(labelMaterial);
+                label.position.set(worldX, 1.0, worldZ);
+                label.scale.set(1, 0.5, 1);
+                label.name = `DebugConnection_${component.gridX}_${component.gridZ}_label`;
+                scene.add(label);
+            });
+        }
+
+        // Add a key listener for debug visualization (press 'D' to toggle)
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'd' || event.key === 'D') {
+                visualizeConnections();
+            }
+        });
+
+        // Check if a component can accept energy from a direction
+        function canAcceptEnergyFromDirection(component, direction) {
+            switch (component.type) {
+                case COMPONENT_WIRE:
+                    // Wires can accept energy from both ends of their orientation
+                    if (component.direction % 2 === 0) { // Vertical (UP/DOWN)
+                        return direction === DIRECTION_UP || direction === DIRECTION_DOWN;
+                    } else { // Horizontal (LEFT/RIGHT)
+                        return direction === DIRECTION_LEFT || direction === DIRECTION_RIGHT;
+                    }
+
+                case COMPONENT_LED:
+                    // LEDs can only accept energy from the opposite of their facing direction
+                    const oppositeOfLedDirection = (component.direction + 2) % 4;
+                    console.log(`LED direction: ${component.direction}, opposite: ${oppositeOfLedDirection}, incoming: ${direction}`);
+                    return direction === oppositeOfLedDirection;
+
+                case COMPONENT_POWER_SOURCE:
+                    // Power sources don't accept energy
+                    return false;
+
+                default:
+                    return false;
+            }
+        }
+
+        // Energize a component
+        function energizeComponent(component, energyType) {
+            console.log(`Energizing ${component.type} at (${component.gridX}, ${component.gridZ}) with ${energyType}`);
+
+            component.energized = true;
+            component.energyType = energyType;
+
+            // Update visual appearance
+            updateComponentEnergizedState(component);
+        }
+
+        // Update component visual state based on energized status
+        function updateComponentEnergizedState(component) {
+            // Get the 3D object
+            const obj = component.object3D;
+
+            // Update materials based on component type
+            switch (component.type) {
+                case COMPONENT_WIRE:
+                    // Wire is just a single mesh
+                    if (obj.children[0] && obj.children[0].material) {
+                        const color = component.energized ?
+                            ENERGY_COLORS[component.energyType] :
+                            COMPONENT_COLORS[component.type];
+
+                        obj.children[0].material.color.copy(color);
+                        obj.children[0].material.emissive.copy(color);
+                        obj.children[0].material.emissiveIntensity = component.energized ? 0.8 : 0.3;
+                    }
+                    break;
+
+                case COMPONENT_LED:
+                    // LED has base and top
+                    if (obj.children[1] && obj.children[1].material) {
+                        const color = component.energized ?
+                            ENERGY_COLORS[component.energyType] :
+                            COMPONENT_COLORS[component.type];
+
+                        obj.children[1].material.color.copy(color);
+                        obj.children[1].material.emissive.copy(color);
+                        obj.children[1].material.emissiveIntensity = component.energized ? 0.8 : 0.3;
+                    }
+
+                    // Add/remove point light based on energized state
+                    if (component.energized) {
+                        // Check if light already exists
+                        let hasLight = false;
+                        obj.children.forEach(child => {
+                            if (child.type === 'PointLight') hasLight = true;
+                        });
+
+                        if (!hasLight) {
+                            const light = new THREE.PointLight(
+                                new THREE.Color(ENERGY_COLORS[component.energyType]),
+                                1,
+                                2
+                            );
+                            light.position.y = 0.5;
+                            obj.add(light);
+                        }
+                    } else {
+                        // Remove any existing lights
+                        obj.children.forEach(child => {
+                            if (child.type === 'PointLight') obj.remove(child);
+                        });
+                    }
+                    break;
+            }
+        }
+
+        // Convert direction to grid offset
+        function directionToOffset(direction) {
+            switch (direction) {
+                case DIRECTION_UP: return { x: 0, y: -1 }; // Up is -Z
+                case DIRECTION_RIGHT: return { x: 1, y: 0 }; // Right is +X
+                case DIRECTION_DOWN: return { x: 0, y: 1 }; // Down is +Z
+                case DIRECTION_LEFT: return { x: -1, y: 0 }; // Left is -X
+                default: return { x: 0, y: 0 };
+            }
+        }
+
+        // Add an energy path between two cells
+        function addEnergyPath(x1, z1, x2, z2, energyType) {
+            energyPaths.push({
+                x1: x1,
+                z1: z1,
+                x2: x2,
+                z2: z2,
+                energyType: energyType
+            });
+        }
+
+        // Clear all energy paths
+        function clearEnergyPaths() {
+            energyPaths = [];
+
+            // Clear existing particle animations
+            energyParticles.forEach(particle => {
+                if (particle.object) {
+                    scene.remove(particle.object);
+                }
+            });
+
+            energyParticles = [];
+        }
+
+        // Create energy flow animations
+        function createEnergyFlowAnimations() {
+            // For each energy path, create flowing particles
+            energyPaths.forEach(path => {
+                const color = ENERGY_COLORS[path.energyType];
+
+                // Calculate world positions
+                const x1 = path.x1 - Math.floor(GRID_SIZE / 2);
+                const z1 = path.z1 - Math.floor(GRID_SIZE / 2);
+                const x2 = path.x2 - Math.floor(GRID_SIZE / 2);
+                const z2 = path.z2 - Math.floor(GRID_SIZE / 2);
+
+                // Get components on both ends to determine proper path direction
+                const comp1 = getComponentAt(path.x1, path.z1);
+                const comp2 = getComponentAt(path.x2, path.z2);
+
+                // Create 2-3 particles along this path
+                for (let i = 0; i < 2; i++) {
+                    // Create particle geometry
+                    const particleGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+                    const particleMaterial = new THREE.MeshBasicMaterial({
+                        color: color,
+                        transparent: true,
+                        opacity: 0.8
+                    });
+
+                    const particleMesh = new THREE.Mesh(particleGeometry, particleMaterial);
+
+                    // Initial position (starting point of path)
+                    particleMesh.position.set(x1, 0.2, z1);
+
+                    // Add point light
+                    const light = new THREE.PointLight(color, 0.5, 0.8);
+                    particleMesh.add(light);
+
+                    scene.add(particleMesh);
+
+                    // Store particle data
+                    energyParticles.push({
+                        object: particleMesh,
+                        path: { x1, z1, x2, z2 },
+                        progress: i * 0.5, // Stagger particles
+                        speed: 0.02 + Math.random() * 0.01
+                    });
+                }
+            });
+        }
+
+        // Update inventory display
+        function updateInventoryDisplay() {
+            document.querySelector('.inventory-item[data-component="wire"] .inventory-count').textContent =
+                inventory[COMPONENT_WIRE].toString();
+        }
+
+        // Check if level is complete
+        function checkLevelComplete() {
+            if (isLevelComplete) return; // Already completed
+
+            console.log("Checking if level is complete...");
+
+            // Level 1 is complete when the LED is energized
+            const leds = components.filter(c => c.type === COMPONENT_LED);
+
+            console.log(`Found ${leds.length} LEDs on the level`);
+
+            if (leds.length > 0) {
+                const allLit = leds.every(led => led.energized);
+                console.log(`All LEDs energized: ${allLit}`);
+
+                if (allLit) {
+                    console.log("LEVEL COMPLETE!");
+                    isLevelComplete = true;
+
+                    // Show completion message
+                    document.getElementById('level-complete').style.display = 'block';
+
+                    // Celebration effects
+                    celebrate();
+                }
+            }
+        }
+
+        // Celebration effects
+        function celebrate() {
+            // Find all LEDs
+            const leds = components.filter(c => c.type === COMPONENT_LED);
+
+            // Make them pulse more intensely
+            leds.forEach(led => {
+                const obj = led.object3D;
+
+                // Increase light intensity
+                obj.children.forEach(child => {
+                    if (child.type === 'PointLight') {
+                        child.intensity = 2;
+                        child.distance = 5;
+                    }
+                });
+            });
+
+            // ToDo: Add particle effects, sounds, something exciting...
+        }
+
+        // Set up UI event listeners
+        function setupEventListeners() {
+            // Inventory item selection
+            document.querySelectorAll('.inventory-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    // Get component type
+                    const componentType = item.getAttribute('data-component');
+
+                    // If we have this component in inventory
+                    if (inventory[componentType] > 0) {
+                        // Toggle selection
+                        if (selectedComponent === componentType) {
+                            selectedComponent = null;
+                            item.classList.remove('selected');
+                        } else {
+                            // Deselect any previously selected items
+                            document.querySelectorAll('.inventory-item').forEach(i => {
+                                i.classList.remove('selected');
+                            });
+
+                            selectedComponent = componentType;
+                            item.classList.add('selected');
+                        }
+                    }
+                });
+            });
+
+            // Help button
+            document.getElementById('help-button').addEventListener('click', () => {
+                document.getElementById('tutorial').style.display = 'block';
+            });
+
+            // Close tutorial button
+            document.getElementById('close-tutorial').addEventListener('click', () => {
+                document.getElementById('tutorial').style.display = 'none';
+            });
+
+            // Next level button
+            document.getElementById('next-level').addEventListener('click', () => {
+                // For now, just reload the page
+                window.location.reload();
+
+                // ToDo: load the next level
+            });
+
+            // Window resize handling
+            window.addEventListener('resize', () => {
+                // Update camera aspect ratio
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+
+                // Update renderer size
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                composer.setSize(window.innerWidth, window.innerHeight);
+
+                // Update FXAA pass resolution
+                composer.passes[2].material.uniforms['resolution'].value.set(
+                    1 / (window.innerWidth * renderer.getPixelRatio()),
+                    1 / (window.innerHeight * renderer.getPixelRatio())
+                );
+            });
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update controls
+            controls.update();
+
+            // Update energy particles
+            energyParticles.forEach(particle => {
+                // Update position based on progress
+                const { x1, z1, x2, z2 } = particle.path;
+                const progress = particle.progress;
+
+                // Interpolate position
+                particle.object.position.x = x1 + (x2 - x1) * progress;
+                particle.object.position.z = z1 + (z2 - z1) * progress;
+
+                // Update progress
+                particle.progress += particle.speed;
+                if (particle.progress > 1) {
+                    particle.progress = 0;
+                }
+
+                // Pulse size and opacity
+                const pulse = 0.8 + 0.2 * Math.sin(Date.now() * 0.01);
+                particle.object.scale.set(pulse, pulse, pulse);
+                particle.object.material.opacity = 0.7 + 0.3 * pulse;
+            });
+
+            // Animate connection point highlights
+            scene.children.forEach(obj => {
+                if (obj.name && obj.name.startsWith('ConnectionPoint') && obj.userData) {
+                    const { originalOpacity, pulseFactor } = obj.userData;
+
+                    // Pulse opacity based on time
+                    const pulse = Math.sin(Date.now() * 0.003 + pulseFactor) * 0.3 + 0.7;
+                    obj.material.opacity = originalOpacity * pulse;
+                }
+            });
+
+            // Update component animations (pulsing effects for energized components)
+            components.forEach(component => {
+                if (component.energized) {
+                    const obj = component.object3D;
+
+                    obj.children.forEach(child => {
+                        if (child.material && child.material.emissiveIntensity) {
+                            // Pulse emissive intensity
+                            child.material.emissiveIntensity = 0.5 + 0.3 * Math.sin(Date.now() * 0.003);
+                        }
+                    });
+                }
+            });
+
+            // Render with post-processing
+            composer.render();
+        }
+
+        class SynthwaveMusic {
+            constructor() {
+                // Initialize Web Audio API
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.isPlaying = false;
+                this.musicVolume = 0.3; // Default volume level
+                this.bpm = 115; // Beats per minute (slightly adjusted for better vibe)
+                this.debug = false; // Debug logging flag
+
+                // Key elements for synthwave sound
+                this.bassline = null;
+                this.arpeggios = null;
+                this.drums = null;
+                this.lead = null;
+                this.pad = null;
+
+                // Loop control
+                this.loopTimeoutId = null;
+                this.loopData = null;
+
+                // Master volume control
+                this.masterGain = this.audioContext.createGain();
+                this.masterGain.gain.value = this.musicVolume;
+                this.masterGain.connect(this.audioContext.destination);
+
+                // Effects chain
+                this.reverbNode = this.createReverb(2.5); // Long reverb for that 80s sound
+                this.reverbNode.connect(this.masterGain);
+
+                // Compressor for that punchy synthwave sound
+                this.compressor = this.audioContext.createDynamicsCompressor();
+                this.compressor.threshold.value = -24;
+                this.compressor.knee.value = 30;
+                this.compressor.ratio.value = 12;
+                this.compressor.attack.value = 0.003;
+                this.compressor.release.value = 0.25;
+                this.compressor.connect(this.reverbNode);
+            }
+
+            // Create reverb effect
+            createReverb(seconds) {
+                const sampleRate = this.audioContext.sampleRate;
+                const length = sampleRate * seconds;
+                const impulse = this.audioContext.createBuffer(2, length, sampleRate);
+                const impulseL = impulse.getChannelData(0);
+                const impulseR = impulse.getChannelData(1);
+
+                for (let i = 0; i < length; i++) {
+                    // Fade out reverb over time
+                    const decay = Math.pow(1 - i / length, 2);
+                    impulseL[i] = (Math.random() * 2 - 1) * decay;
+                    impulseR[i] = (Math.random() * 2 - 1) * decay;
+                }
+
+                const convolver = this.audioContext.createConvolver();
+                convolver.buffer = impulse;
+                return convolver;
+            }
+
+            // Create synth oscillator with envelope
+            createSynth(type = 'sawtooth', options = {}) {
+                const oscillator = this.audioContext.createOscillator();
+                oscillator.type = type;
+
+                if (options.detune) {
+                    oscillator.detune.value = options.detune;
+                }
+
+                // Create gain node for envelope
+                const gainNode = this.audioContext.createGain();
+                gainNode.gain.value = 0;
+
+                // Create filter for tone shaping
+                const filter = this.audioContext.createBiquadFilter();
+                filter.type = options.filterType || 'lowpass';
+                filter.frequency.value = options.filterCutoff || 2000;
+                filter.Q.value = options.filterResonance || 1;
+
+                // Connect oscillator -> filter -> gain -> output
+                oscillator.connect(filter);
+                filter.connect(gainNode);
+
+                return {
+                    oscillator,
+                    gainNode,
+                    filter,
+
+                    // Play note with ADSR envelope
+                    playNote: (note, time, duration, velocity = 1.0) => {
+                        const now = time || this.audioContext.currentTime;
+                        const freq = typeof note === 'number' ? note : this.noteToFrequency(note);
+
+                        if (this.debug) {
+                            console.log(`Playing note: ${note} (${freq}Hz) at ${now.toFixed(3)} for ${duration.toFixed(3)}s`);
+                        }
+
+                        oscillator.frequency.setValueAtTime(freq, now);
+
+                        // Attack
+                        gainNode.gain.cancelScheduledValues(now);
+                        gainNode.gain.setValueAtTime(0, now);
+                        gainNode.gain.linearRampToValueAtTime(
+                            velocity * (options.maxGain || 0.8),
+                            now + (options.attack || 0.01)
+                        );
+
+                        // Decay to sustain
+                        gainNode.gain.linearRampToValueAtTime(
+                            velocity * (options.sustain || 0.5),
+                            now + (options.attack || 0.01) + (options.decay || 0.2)
+                        );
+
+                        // Release
+                        gainNode.gain.setValueAtTime(
+                            velocity * (options.sustain || 0.5),
+                            now + duration - (options.release || 0.1)
+                        );
+                        gainNode.gain.linearRampToValueAtTime(
+                            0,
+                            now + duration
+                        );
+
+                        // Filter envelope if specified
+                        if (options.filterEnvelope) {
+                            const baseFreq = options.filterCutoff || 2000;
+                            filter.frequency.cancelScheduledValues(now);
+                            filter.frequency.setValueAtTime(baseFreq, now);
+
+                            // Filter attack
+                            filter.frequency.linearRampToValueAtTime(
+                                baseFreq * options.filterEnvelope.amount,
+                                now + (options.filterEnvelope.attack || 0.01)
+                            );
+
+                            // Filter decay
+                            filter.frequency.exponentialRampToValueAtTime(
+                                baseFreq * (options.filterEnvelope.sustain || 1),
+                                now + (options.filterEnvelope.attack || 0.01) + (options.filterEnvelope.decay || 0.5)
+                            );
+                        }
+                    }
+                };
+            }
+
+            // Create noise generator (for drums)
+            createNoise() {
+                const bufferSize = 2 * this.audioContext.sampleRate;
+                const noiseBuffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = Math.random() * 2 - 1;
+                }
+
+                const noise = this.audioContext.createBufferSource();
+                noise.buffer = noiseBuffer;
+                noise.loop = true;
+
+                const noiseFilter = this.audioContext.createBiquadFilter();
+                noiseFilter.type = 'highpass';
+                noiseFilter.frequency.value = 500;
+
+                const noiseGain = this.audioContext.createGain();
+                noiseGain.gain.value = 0;
+
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+
+                return {
+                    noise,
+                    noiseFilter,
+                    noiseGain,
+
+                    trigger: (time, duration, velocity, filterFreq = 500) => {
+                        const now = time || this.audioContext.currentTime;
+
+                        // Set filter frequency
+                        noiseFilter.frequency.setValueAtTime(filterFreq, now);
+
+                        // Attack
+                        noiseGain.gain.cancelScheduledValues(now);
+                        noiseGain.gain.setValueAtTime(0, now);
+                        noiseGain.gain.linearRampToValueAtTime(velocity * 0.5, now + 0.001);
+
+                        // Decay
+                        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                    }
+                };
+            }
+
+            // Create synthwave bassline
+            createBassline() {
+                if (this.debug) console.log("Creating bassline...");
+
+                // Create bass synth with fat sound
+                const bass = this.createSynth('sawtooth', {
+                    attack: 0.005,
+                    decay: 0.1,
+                    sustain: 0.9,
+                    release: 0.1,
+                    maxGain: 0.8,
+                    filterCutoff: 800,
+                    filterResonance: 8,
+                    filterEnvelope: {
+                        attack: 0.005,
+                        decay: 0.2,
+                        sustain: 0.4,
+                        amount: 6
+                    }
+                });
+
+                // Add distortion for that synthwave grit
+                const distortion = this.audioContext.createWaveShaper();
+                function makeDistortionCurve(amount) {
+                    const k = amount;
+                    const n_samples = 44100;
+                    const curve = new Float32Array(n_samples);
+
+                    for (let i = 0; i < n_samples; ++i) {
+                        const x = i * 2 / n_samples - 1;
+                        curve[i] = (3 + k) * x * 20 * (1 / 3) / (Math.PI + k * Math.abs(x));
+                    }
+                    return curve;
+                }
+
+                distortion.curve = makeDistortionCurve(10);
+                distortion.oversample = '4x';
+
+                // Direct connection for bassline
+                bass.gainNode.disconnect();
+                bass.gainNode.connect(distortion);
+                distortion.connect(this.compressor);
+
+                // Start the oscillator
+                bass.oscillator.start();
+
+                if (this.debug) console.log("Bassline created and properly connected");
+
+                return bass;
+            }
+
+            // Create synthwave arpeggios
+            createArpeggios() {
+                if (this.debug) console.log("Creating arpeggios...");
+
+                // Create arpeggio synth (brighter than bass)
+                const arp = this.createSynth('sawtooth', {
+                    attack: 0.005,
+                    decay: 0.1,
+                    sustain: 0.3,
+                    release: 0.05,
+                    maxGain: 0.3,
+                    filterCutoff: 3000,
+                    filterResonance: 2
+                });
+
+                // Add chorus effect for width
+                const chorus1 = this.audioContext.createDelay();
+                const chorus2 = this.audioContext.createDelay();
+                chorus1.delayTime.value = 0.025;
+                chorus2.delayTime.value = 0.027;
+
+                const chorusGain1 = this.audioContext.createGain();
+                const chorusGain2 = this.audioContext.createGain();
+                chorusGain1.gain.value = 0.25;
+                chorusGain2.gain.value = 0.25;
+
+                // Connect the chain with chorus
+                arp.gainNode.disconnect();
+                arp.gainNode.connect(this.compressor);  // Direct signal
+                arp.gainNode.connect(chorus1);
+                arp.gainNode.connect(chorus2);
+                chorus1.connect(chorusGain1);
+                chorus2.connect(chorusGain2);
+                chorusGain1.connect(this.compressor);
+                chorusGain2.connect(this.compressor);
+
+                // Start the oscillator
+                arp.oscillator.start();
+
+                if (this.debug) console.log("Arpeggios created and properly connected");
+
+                return arp;
+            }
+
+            // Create synthwave drums
+            createDrums() {
+                if (this.debug) console.log("Creating drum sounds...");
+
+                // Kick drum - deep and punchy
+                const kick = this.createSynth('sine', {
+                    attack: 0.001,
+                    decay: 0.2,
+                    sustain: 0,
+                    release: 0.1,
+                    maxGain: 1.0
+                });
+
+                // Snare drum (using noise)
+                const snareFilter = this.audioContext.createBiquadFilter();
+                snareFilter.type = 'bandpass';
+                snareFilter.frequency.value = 1000;
+                snareFilter.Q.value = 1.5;
+
+                const snareGain = this.audioContext.createGain();
+                snareGain.gain.value = 0;
+
+                // Create noise buffer for snare
+                const bufferSize = 2 * this.audioContext.sampleRate;
+                const noiseBuffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = Math.random() * 2 - 1;
+                }
+
+                // Create noise source for snare
+                const snareNoise = this.audioContext.createBufferSource();
+                snareNoise.buffer = noiseBuffer;
+                snareNoise.loop = true;
+                snareNoise.start();
+
+                // Connect snare chain
+                snareNoise.connect(snareFilter);
+                snareFilter.connect(snareGain);
+                snareGain.connect(this.compressor);
+
+                // Hi-hat (using noise with high-pass filter)
+                const hihatFilter = this.audioContext.createBiquadFilter();
+                hihatFilter.type = 'highpass';
+                hihatFilter.frequency.value = 7000;
+
+                const hihatGain = this.audioContext.createGain();
+                hihatGain.gain.value = 0;
+
+                // Create noise source for hi-hat
+                const hihatNoise = this.audioContext.createBufferSource();
+                hihatNoise.buffer = noiseBuffer; // Reuse the same noise buffer
+                hihatNoise.loop = true;
+                hihatNoise.start();
+
+                // Connect hi-hat chain
+                hihatNoise.connect(hihatFilter);
+                hihatFilter.connect(hihatGain);
+                hihatGain.connect(this.compressor);
+
+                // Ensure kick connects properly
+                kick.gainNode.connect(this.compressor);
+                kick.oscillator.start();
+
+                if (this.debug) console.log("Drums created and properly connected");
+
+                return {
+                    kick,
+                    snare: {
+                        trigger: (time, duration, velocity) => {
+                            const now = time || this.audioContext.currentTime;
+
+                            // Set envelope
+                            snareGain.gain.cancelScheduledValues(now);
+                            snareGain.gain.setValueAtTime(0, now);
+                            snareGain.gain.linearRampToValueAtTime(velocity * 0.7, now + 0.005);
+                            snareGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+                        }
+                    },
+                    hihat: {
+                        trigger: (time, duration, velocity) => {
+                            const now = time || this.audioContext.currentTime;
+
+                            // Set envelope
+                            hihatGain.gain.cancelScheduledValues(now);
+                            hihatGain.gain.setValueAtTime(0, now);
+                            hihatGain.gain.linearRampToValueAtTime(velocity * 0.3, now + 0.001);
+                            hihatGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+                        }
+                    }
+                };
+            }
+
+            // Create synthwave lead sound
+            createLead() {
+                if (this.debug) console.log("Creating lead synth...");
+
+                // Create lead synth with a brighter sound
+                const lead = this.createSynth('sawtooth', {
+                    attack: 0.01,
+                    decay: 0.3,
+                    sustain: 0.7,
+                    release: 0.2,
+                    maxGain: 0.4,
+                    detune: 10, // Slight detune for thickness
+                    filterCutoff: 5000,
+                    filterType: 'lowpass',
+                    filterResonance: 2,
+                    filterEnvelope: {
+                        attack: 0.05,
+                        decay: 0.5,
+                        sustain: 0.5,
+                        amount: 2
+                    }
+                });
+
+                // Add delay effect
+                const delay = this.audioContext.createDelay();
+                delay.delayTime.value = 60 / this.bpm / 2; // Eighth note delay
+
+                const feedback = this.audioContext.createGain();
+                feedback.gain.value = 0.4; // 40% feedback
+
+                // Connect the chain with delay
+                lead.gainNode.disconnect();
+                lead.gainNode.connect(this.compressor);  // Direct signal
+                lead.gainNode.connect(delay);
+                delay.connect(feedback);
+                feedback.connect(delay);
+                feedback.connect(this.compressor);
+
+                // Start the oscillator
+                lead.oscillator.start();
+
+                if (this.debug) console.log("Lead synth created and properly connected");
+
+                return lead;
+            }
+
+            // Create synthwave pad sound
+            createPad() {
+                if (this.debug) console.log("Creating pads...");
+
+                // Create multiple oscillators for a rich pad sound
+                const pad1 = this.createSynth('sawtooth', {
+                    attack: 1.5,
+                    decay: 1.0,
+                    sustain: 0.8,
+                    release: 2.0,
+                    maxGain: 0.15,
+                    detune: 0,
+                    filterCutoff: 1500,
+                    filterResonance: 1
+                });
+
+                const pad2 = this.createSynth('sawtooth', {
+                    attack: 1.5,
+                    decay: 1.0,
+                    sustain: 0.8,
+                    release: 2.0,
+                    maxGain: 0.15,
+                    detune: 7, // Slight detune for chorus effect
+                    filterCutoff: 1500,
+                    filterResonance: 1
+                });
+
+                // Connect to output
+                pad1.gainNode.connect(this.reverbNode); // More reverb for pads
+                pad2.gainNode.connect(this.reverbNode);
+
+                // Start oscillators
+                pad1.oscillator.start();
+                pad2.oscillator.start();
+
+                if (this.debug) console.log("Pads created and properly connected");
+
+                return { pad1, pad2 };
+            }
+
+            // Initialize all synth instruments
+            createSynthwaveSong() {
+                if (this.debug) console.log("Creating all instruments...");
+
+                try {
+                    // Create instruments in correct order
+                    this.drums = this.createDrums();
+                    this.bassline = this.createBassline();
+                    this.arpeggios = this.createArpeggios();
+                    this.lead = this.createLead();
+                    this.pad = this.createPad();
+
+                    if (this.debug) console.log("All instruments successfully initialized");
+                } catch (error) {
+                    console.error("Error creating instruments:", error);
+                }
+            }
+
+            // Generate bassline pattern
+            generateBassPattern(key = 'C', minor = true) {
+                // Base notes for the bassline
+                const root = key + '2';
+                const fifth = this.transposeNote(root, 7);
+                const sixth = this.transposeNote(root, minor ? 8 : 9);
+                const fourth = this.transposeNote(root, 5);
+
+                // Simple pattern alternating between notes
+                return [
+                    { note: root, duration: 2 },
+                    { note: root, duration: 2 },
+                    { note: this.transposeNote(root, 12), duration: 1 }, // One octave up
+                    { note: this.transposeNote(root, 12), duration: 1 },
+
+                    { note: sixth, duration: 2 },
+                    { note: sixth, duration: 2 },
+                    { note: this.transposeNote(sixth, 12), duration: 1 },
+                    { note: this.transposeNote(sixth, 12), duration: 1 },
+
+                    { note: fourth, duration: 2 },
+                    { note: fourth, duration: 2 },
+                    { note: this.transposeNote(fourth, 12), duration: 1 },
+                    { note: this.transposeNote(fourth, 12), duration: 1 },
+
+                    { note: fifth, duration: 2 },
+                    { note: fifth, duration: 2 },
+                    { note: this.transposeNote(fifth, 12), duration: 1 },
+                    { note: this.transposeNote(fifth, 12), duration: 1 }
+                ];
+            }
+
+            // Generate arpeggio pattern
+            generateArpPattern(key = 'C', minor = true) {
+                // Define chord tones
+                const i = [key + '4', this.transposeNote(key + '4', minor ? 3 : 4), this.transposeNote(key + '4', 7)];
+                const vi = [this.transposeNote(key + '4', minor ? 8 : 9), this.transposeNote(key + '4', minor ? 11 : 12), this.transposeNote(key + '4', minor ? 15 : 16)];
+                const iv = [this.transposeNote(key + '4', 5), this.transposeNote(key + '4', minor ? 8 : 9), this.transposeNote(key + '4', 12)];
+                const v = [this.transposeNote(key + '4', 7), this.transposeNote(key + '4', minor ? 10 : 11), this.transposeNote(key + '4', 14)];
+
+                // Arpeggio pattern for each chord
+                const pattern = [];
+
+                // Helper to add arpeggios
+                const addArpeggio = (chord, repeats = 4) => {
+                    for (let i = 0; i < repeats; i++) {
+                        pattern.push({ note: chord[0], duration: 0.5 });
+                        pattern.push({ note: chord[1], duration: 0.5 });
+                        pattern.push({ note: chord[2], duration: 0.5 });
+                        pattern.push({ note: chord[1], duration: 0.5 });
+                    }
+                };
+
+                // Add all chord arpeggios
+                addArpeggio(i, 2);
+                addArpeggio(vi, 2);
+                addArpeggio(iv, 2);
+                addArpeggio(v, 2);
+
+                return pattern;
+            }
+
+            // Generate drum pattern
+            generateDrumPattern() {
+                // Create a more upbeat, exciting 16-bar pattern
+                const pattern = [];
+
+                // Extended drum pattern (16 bars of drums = 64 beats)
+                for (let bar = 0; bar < 16; bar++) {
+                    // Kick on every quarter note with occasional variations
+                    for (let beat = 0; beat < 4; beat++) {
+                        // Main kicks
+                        pattern.push({
+                            type: 'kick',
+                            time: bar * 4 + beat,
+                            velocity: beat === 0 ? 1.0 : 0.8
+                        });
+
+                        // Add extra kick before 3rd beat in some bars for more drive
+                        if (beat === 2 && (bar % 4 !== 3)) {
+                            pattern.push({
+                                type: 'kick',
+                                time: bar * 4 + beat - 0.5,
+                                velocity: 0.7
+                            });
+                        }
+
+                        // Add quick double kick occasionally for variation
+                        if (beat === 3 && (bar % 8 === 7)) {
+                            pattern.push({
+                                type: 'kick',
+                                time: bar * 4 + beat + 0.75,
+                                velocity: 0.9
+                            });
+                        }
+                    }
+
+                    // Snare on beats 2 and 4 with ghost notes
+                    pattern.push({ type: 'snare', time: bar * 4 + 1, velocity: 0.8 });
+                    pattern.push({ type: 'snare', time: bar * 4 + 3, velocity: 0.8 });
+
+                    // Add ghost snare hit in different patterns
+                    if (bar % 4 === 1 || bar % 4 === 3) {
+                        pattern.push({ type: 'snare', time: bar * 4 + 3.75, velocity: 0.4 });
+                    }
+
+                    // Fill at the end of 8-bar phrases
+                    if (bar === 7 || bar === 15) {
+                        pattern.push({ type: 'snare', time: bar * 4 + 3.25, velocity: 0.5 });
+                        pattern.push({ type: 'snare', time: bar * 4 + 3.5, velocity: 0.6 });
+                        pattern.push({ type: 'snare', time: bar * 4 + 3.75, velocity: 0.7 });
+                    }
+
+                    // Hi-hats on sixteenth notes for driving rhythm
+                    for (let sixteenth = 0; sixteenth < 16; sixteenth++) {
+                        let velocity;
+
+                        // Different velocities for different positions
+                        if (sixteenth % 4 === 0) {
+                            velocity = 0.6; // Strong on the beat
+                        } else if (sixteenth % 2 === 0) {
+                            velocity = 0.4; // Medium on eighth notes
+                        } else if ((bar % 4 === 3) && (sixteenth >= 12)) {
+                            velocity = 0.5; // Accented during fills
+                        } else {
+                            velocity = 0.25; // Quiet on offbeats
+                        }
+
+                        // Every 4 bars, introduce open hi-hats on the offbeats in the last bar
+                        if (bar % 4 === 3 && sixteenth % 4 === 2) {
+                            pattern.push({
+                                type: 'hihat',
+                                time: bar * 4 + sixteenth * 0.25,
+                                velocity: 0.5,
+                                duration: 0.2 // Longer duration for open hi-hat
+                            });
+                        } else {
+                            pattern.push({
+                                type: 'hihat',
+                                time: bar * 4 + sixteenth * 0.25,
+                                velocity: velocity
+                            });
+                        }
+                    }
+                }
+
+                return pattern;
+            }
+
+            // Generate lead pattern - more interesting with variations
+            generateLeadPattern(key = 'C', minor = true) {
+                // Scale degrees for minor or major
+                const scale = minor ?
+                    [0, 2, 3, 5, 7, 8, 10, 12] : // Natural minor
+                    [0, 2, 4, 5, 7, 9, 11, 12];  // Major
+
+                // Create a pattern that only plays in the second half of the loop
+                const pattern = [];
+
+                // Create 32 beats of silence (8 bars) - lead starts halfway through pattern
+                for (let i = 0; i < 32; i++) {
+                    pattern.push({ note: null, duration: 0.5, rest: true });
+                }
+
+                // Create an interesting melody for second half (8 bars)
+                const melodySequence = [
+                    { degree: 7, duration: 1.5 },     // Octave
+                    { degree: 5, duration: 0.5 },     // Sixth
+                    { degree: 4, duration: 1.0 },     // Fifth
+                    { degree: 5, duration: 1.0 },     // Sixth
+                    { degree: 2, duration: 1.0 },     // Third
+                    { degree: 0, duration: 1.0 },     // Root
+                    { degree: 2, duration: 1.5 },     // Third
+                    { degree: 4, duration: 0.5 },     // Fifth
+                    { degree: 5, duration: 2.0 },     // Sixth
+                    { degree: 7, duration: 1.0 },     // Octave
+                    { degree: 5, duration: 1.0 },     // Sixth
+                    { degree: 4, duration: 1.0 },     // Fifth
+                    { degree: 2, duration: 1.0 },     // Third
+                    { degree: 4, duration: 0.5 },     // Fifth
+                    { degree: 2, duration: 0.5 },     // Third
+                    { degree: 0, duration: 2.0 },     // Root
+                    // Second phrase
+                    { degree: 7, duration: 1.0, octave: -1 }, // Seventh below
+                    { degree: 0, duration: 1.0 },     // Root
+                    { degree: 2, duration: 1.0 },     // Third
+                    { degree: 4, duration: 1.0 },     // Fifth
+                    { degree: 5, duration: 1.5 },     // Sixth
+                    { degree: 7, duration: 0.5 },     // Octave
+                    { degree: 5, duration: 1.0 },     // Sixth
+                    { degree: 7, duration: 1.0 },     // Octave
+                    { degree: 10, duration: 2.0 },    // Third above octave
+                    { degree: 7, duration: 2.0 },     // Octave
+                    { degree: 5, duration: 1.0 },     // Sixth
+                    { degree: 4, duration: 1.0 },     // Fifth
+                    { degree: 2, duration: 1.0 },     // Third
+                    { degree: 0, duration: 2.0 },     // Root
+                    { degree: 0, duration: 1.0, rest: true }  // Rest
+                ];
+
+                // Convert sequence to actual notes and add to pattern
+                let beatPosition = 32; // Start position (after silent section)
+
+                melodySequence.forEach(item => {
+                    if (item.rest) {
+                        pattern.push({ note: null, duration: item.duration, rest: true });
+                    } else {
+                        const octaveShift = item.octave || 0;
+                        const noteOctave = 5 + octaveShift; // Base octave for lead melody
+                        const note = this.transposeNote(key + noteOctave, scale[item.degree % scale.length]);
+                        pattern.push({ note: note, duration: item.duration });
+                    }
+                    beatPosition += item.duration;
+                });
+
+                return pattern;
+            }
+
+            // Generate pad pattern with longer chords
+            generatePadPattern(key = 'C', minor = true) {
+                if (this.debug) console.log(`Generating pad pattern in key: ${key} ${minor ? 'minor' : 'major'}`);
+
+                // Define chord root notes
+                const rootNote = key + '3';
+
+                // Safeguard against invalid note names
+                if (!/^[A-G][#b]?[0-8]$/.test(rootNote)) {
+                    if (this.debug) console.warn(`Invalid root note: ${rootNote}, defaulting to C3`);
+                    key = 'C'; // Default to C if invalid key
+                }
+
+                try {
+                    // Define chord root notes - fixed and validated
+                    const i = key + '3';  // Root
+                    const vi = this.transposeNote(key + '3', minor ? 8 : 9);  // 6th
+                    const iv = this.transposeNote(key + '3', 5);  // 4th
+                    const v = this.transposeNote(key + '3', 7);   // 5th
+
+                    if (this.debug) {
+                        console.log(`Chord roots: I=${i}, VI=${vi}, IV=${iv}, V=${v}`);
+                    }
+
+                    // Define chord intervals
+                    const minorChord = [0, 3, 7, 12]; // Root, minor third, fifth, octave
+                    const majorChord = [0, 4, 7, 12]; // Root, major third, fifth, octave
+
+                    // Create long chord tones
+                    const pattern = [];
+
+                    // Add chord tones with seconds offset for pad2 to create movement
+                    const addChord = (root, intervals, duration) => {
+                        if (this.debug) console.log(`Adding chord with root: ${root}, duration: ${duration}`);
+
+                        // First pad (pure chord)
+                        intervals.forEach(interval => {
+                            const note = this.transposeNote(root, interval);
+                            if (this.debug) console.log(`Pad1 note: ${note} (interval ${interval})`);
+
+                            pattern.push({
+                                synth: 'pad1',
+                                note: note,
+                                duration: duration
+                            });
+                        });
+
+                        // Second pad (with slight detune for richness)
+                        intervals.forEach(interval => {
+                            // Note: we don't use fractional intervals for transposition anymore
+                            // since that can lead to invalid notes
+                            const note = this.transposeNote(root, interval);
+                            if (this.debug) console.log(`Pad2 note: ${note} (interval ${interval})`);
+
+                            pattern.push({
+                                synth: 'pad2',
+                                note: note,
+                                duration: duration,
+                                detune: 7 // Instead of transposing by a fractional amount, use detune
+                            });
+                        });
+                    };
+
+                    // Create full 16-bar chord progression
+                    // Each chord lasts 4 bars (16 beats)
+                    addChord(i, minor ? minorChord : majorChord, 16);
+                    addChord(vi, minor ? minorChord : majorChord, 16);
+                    addChord(iv, minor ? minorChord : majorChord, 16);
+                    addChord(v, minor ? minorChord : majorChord, 16);
+
+                    return pattern;
+                } catch (e) {
+                    console.error("Error generating pad pattern:", e);
+
+                    // Return a simple safe pattern if something went wrong
+                    return [
+                        { synth: 'pad1', note: 'C3', duration: 64 },
+                        { synth: 'pad1', note: 'E3', duration: 64 },
+                        { synth: 'pad1', note: 'G3', duration: 64 },
+                        { synth: 'pad2', note: 'C3', duration: 64 },
+                        { synth: 'pad2', note: 'E3', duration: 64 },
+                        { synth: 'pad2', note: 'G3', duration: 64 }
+                    ];
+                }
+            }
+
+            // Helper method to convert notes to frequencies
+            noteToFrequency(note) {
+                if (typeof note !== 'string') {
+                    if (this.debug) console.warn("Invalid note:", note);
+                    return 440; // Default to A4
+                }
+
+                const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+                const octave = parseInt(note.slice(-1));
+                const noteName = note.slice(0, -1);
+                const noteIndex = notes.indexOf(noteName);
+
+                if (noteIndex === -1) {
+                    if (this.debug) console.warn("Unknown note name:", noteName);
+                    return 440; // Default to A4
+                }
+
+                // A4 = 440Hz, calculate relative to A4
+                const halfStepsFromA4 = (octave - 4) * 12 + noteIndex - 9;
+                return 440 * Math.pow(2, halfStepsFromA4 / 12);
+            }
+
+            // Transpose a note by semitones
+            transposeNote(note, semitones) {
+                if (typeof note !== 'string') {
+                    if (this.debug) console.warn(`Cannot transpose non-string note: ${note}`);
+                    return 'C4'; // Default to middle C if invalid
+                }
+
+                // Validate the input note format
+                if (!/^[A-G][#b]?[0-8]$/.test(note)) {
+                    if (this.debug) console.warn(`Invalid note format: ${note}`);
+                    return 'C4'; // Default to middle C if invalid
+                }
+
+                try {
+                    const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+                    // Handle flats by converting to equivalent sharps
+                    let normalizedNote = note;
+                    if (note.includes('b')) {
+                        const noteName = note.charAt(0);
+                        const octave = note.charAt(2);
+                        const noteIndex = notes.indexOf(noteName);
+                        if (noteIndex === 0) { // If it's Cb
+                            normalizedNote = 'B' + (parseInt(octave) - 1);
+                        } else {
+                            normalizedNote = notes[noteIndex - 1] + octave;
+                        }
+                    }
+
+                    const octave = parseInt(normalizedNote.slice(-1));
+                    const noteName = normalizedNote.replace(/[0-8]$/, '');
+                    const noteIndex = notes.indexOf(noteName);
+
+                    if (noteIndex === -1) {
+                        if (this.debug) console.warn(`Note name not found in scale: ${noteName}`);
+                        return 'C4'; // Default to middle C if invalid
+                    }
+
+                    // Validate semitones is a number
+                    if (typeof semitones !== 'number' || !isFinite(semitones)) {
+                        if (this.debug) console.warn(`Invalid semitones value: ${semitones}`);
+                        semitones = 0; // Default to no transposition if invalid
+                    }
+
+                    // Use integer semitones only
+                    semitones = Math.round(semitones);
+
+                    // Calculate new note index and octave
+                    let newIndex = noteIndex + semitones;
+                    let newOctave = octave + Math.floor(newIndex / 12);
+                    newIndex = ((newIndex % 12) + 12) % 12; // Ensure positive value
+
+                    // Ensure octave is in valid range (0-8)
+                    newOctave = Math.max(0, Math.min(8, newOctave));
+
+                    return notes[newIndex] + newOctave;
+                } catch (e) {
+                    console.error(`Error transposing note ${note} by ${semitones} semitones:`, e);
+                    return 'C4'; // Default to middle C if any error occurs
+                }
+            }
+
+            // Schedule all patterns
+            schedulePatterns(startTime, key = 'C', minor = true) {
+                if (this.debug) console.log("Scheduling patterns starting at", startTime.toFixed(3));
+
+                const beatDuration = 60 / this.bpm;
+
+                // Generate patterns
+                const bassPattern = this.generateBassPattern(key, minor);
+                const arpPattern = this.generateArpPattern(key, minor);
+                const drumPattern = this.generateDrumPattern();
+                const leadPattern = this.generateLeadPattern(key, minor);
+                const padPattern = this.generatePadPattern(key, minor);
+
+                if (this.debug) {
+                    console.log(`Generated patterns: 
+                Bass: ${bassPattern.length} notes
+                Arpeggios: ${arpPattern.length} notes
+                Drums: ${drumPattern.length} hits
+                Lead: ${leadPattern.length} notes
+                Pad: ${padPattern.length} notes`);
+                }
+
+                // Schedule bass notes
+                let bassTime = startTime;
+                let totalDuration = 0;
+                bassPattern.forEach(note => {
+                    if (!note.rest) {
+                        let freq;
+                        try {
+                            freq = typeof note.note === 'number' ? note.note : this.noteToFrequency(note.note);
+                            if (!isFinite(freq)) freq = 110; // Default to a safe low bass note
+                        } catch (e) {
+                            freq = 110;
+                            if (this.debug) console.warn(`Error processing bass note: ${note.note}`, e);
+                        }
+
+                        if (this.debug && note.duration > 0) {
+                            console.log(`Bass note: ${note.note} (${freq.toFixed(1)}Hz) at ${bassTime.toFixed(3)}`);
+                        }
+
+                        try {
+                            // Directly use frequency for increased reliability
+                            this.bassline.playNote(freq, bassTime, note.duration * beatDuration, 0.95);
+                        } catch (e) {
+                            if (this.debug) console.error(`Error playing bass note: ${note.note}`, e);
+                        }
+                    }
+                    bassTime += note.duration * beatDuration;
+                    totalDuration += note.duration * beatDuration;
+                });
+
+                // Schedule arpeggios
+                let arpTime = startTime;
+                arpPattern.forEach(note => {
+                    if (!note.rest) {
+                        try {
+                            this.arpeggios.playNote(note.note, arpTime, note.duration * beatDuration, 0.7);
+                        } catch (e) {
+                            if (this.debug) console.error(`Error playing arpeggio note: ${note.note}`, e);
+                        }
+                    }
+                    arpTime += note.duration * beatDuration;
+                });
+
+                // Schedule drums
+                drumPattern.forEach(hit => {
+                    const hitTime = startTime + hit.time * beatDuration;
+                    const hitDuration = hit.duration || 0.1; // Default duration if not specified
+
+                    try {
+                        switch (hit.type) {
+                            case 'kick':
+                                // For kick drum, use numeric frequency values directly
+                                const kickPitch = 60; // Fixed frequency for kick
+                                this.drums.kick.playNote(kickPitch, hitTime, 0.4, hit.velocity);
+                                break;
+
+                            case 'snare':
+                                this.drums.snare.trigger(hitTime, 0.2, hit.velocity);
+                                break;
+
+                            case 'hihat':
+                                this.drums.hihat.trigger(hitTime, hitDuration, hit.velocity);
+                                break;
+                        }
+                    } catch (e) {
+                        if (this.debug) console.error(`Error playing drum hit: ${hit.type}`, e);
+                    }
+                });
+
+                // Schedule lead melody
+                let leadTime = startTime;
+                leadPattern.forEach(note => {
+                    if (!note.rest && note.note) {
+                        try {
+                            this.lead.playNote(note.note, leadTime, note.duration * beatDuration, 0.7);
+                        } catch (e) {
+                            if (this.debug) console.error(`Error playing lead note: ${note.note}`, e);
+                        }
+                    }
+                    leadTime += note.duration * beatDuration;
+                });
+
+                // Schedule pad chords with extra safety
+                padPattern.forEach(chord => {
+                    try {
+                        // Validate pad note before playing
+                        if (!chord.note || typeof chord.note !== 'string') {
+                            if (this.debug) console.warn(`Invalid pad note: ${chord.note}, skipping`);
+                            return; // Skip this chord
+                        }
+
+                        // Pre-check the frequency to avoid errors
+                        const testFreq = this.noteToFrequency(chord.note);
+                        if (!isFinite(testFreq)) {
+                            if (this.debug) console.warn(`Invalid frequency for pad note ${chord.note}: ${testFreq}, skipping`);
+                            return; // Skip this chord
+                        }
+
+                        const synth = chord.synth === 'pad1' ? this.pad.pad1 : this.pad.pad2;
+
+                        // Apply detune if specified instead of using a detuned note
+                        if (chord.detune && synth.oscillator.detune) {
+                            const currentDetune = synth.oscillator.detune.value;
+                            synth.oscillator.detune.value = chord.detune;
+
+                            // Schedule the note
+                            synth.playNote(chord.note, startTime, chord.duration * beatDuration, 0.6);
+
+                            // Reset detune after scheduling
+                            synth.oscillator.detune.value = currentDetune;
+                        } else {
+                            // Just play the note normally
+                            synth.playNote(chord.note, startTime, chord.duration * beatDuration, 0.6);
+                        }
+                    } catch (e) {
+                        if (this.debug) console.error(`Error playing pad chord: ${chord.note}`, e);
+                    }
+                });
+
+                // Return total duration (use bass pattern as reference since it's the most standard)
+                return totalDuration;
+            }
+
+            // Enable debugging
+            enableDebug() {
+                this.debug = true;
+                console.log("Debug logging enabled for music system");
+            }
+
+            // Force initialization of audio context
+            forceInit() {
+                if (this.audioContext.state === 'suspended') {
+                    this.audioContext.resume().then(() => {
+                        console.log("AudioContext resumed successfully.");
+                    }).catch(err => {
+                        console.error("Error resuming AudioContext:", err);
+                    });
+                }
+
+                console.log("Audio context state:", this.audioContext.state);
+                return this.audioContext.state;
+            }
+
+            // Check all audio connections
+            checkConnections() {
+                console.log("--- AUDIO CONNECTION CHECK ---");
+
+                // Check audio context
+                console.log(`AudioContext state: ${this.audioContext.state}`);
+                console.log(`Master volume: ${this.masterGain.gain.value}`);
+
+                // Check instruments
+                const checkInstrument = (name, instrument) => {
+                    if (!instrument) {
+                        console.error(`${name} is not created!`);
+                        return false;
+                    }
+                    console.log(`${name} exists`);
+                    return true;
+                };
+
+                checkInstrument("Drums", this.drums);
+                checkInstrument("Bassline", this.bassline);
+                checkInstrument("Arpeggios", this.arpeggios);
+                checkInstrument("Lead", this.lead);
+                checkInstrument("Pad", this.pad);
+
+                console.log("--- END CHECK ---");
+            }
+
+            // Start the music
+            play() {
+                if (this.isPlaying) return;
+
+                // Make sure all instruments are created
+                if (!this.bassline || !this.drums || !this.arpeggios || !this.lead || !this.pad) {
+                    this.createSynthwaveSong();
+                }
+
+                // Resume audio context if suspended
+                if (this.audioContext.state === 'suspended') {
+                    this.audioContext.resume().then(() => {
+                        if (this.debug) console.log("AudioContext resumed successfully");
+                        this._startPlayback();
+                    }).catch(err => {
+                        console.error("Error resuming AudioContext:", err);
+                    });
+                } else {
+                    this._startPlayback();
+                }
+            }
+
+            // Internal method to start actual playback
+            _startPlayback() {
+                console.log("Starting music");
+
+                // Set volume
+                this.masterGain.gain.value = this.musicVolume;
+
+                // Start time with a small delay
+                const startTime = this.audioContext.currentTime + 0.1;
+
+                // Create song structure (randomized key for variety)
+                const songKeys = ['C', 'A', 'F', 'G'];
+                const songKey = songKeys[Math.floor(Math.random() * songKeys.length)];
+                const isMinor = true; // Force minor key for better synthwave feel
+
+                if (this.debug) console.log(`Starting song in ${songKey} ${isMinor ? 'minor' : 'major'}`);
+
+                // Schedule patterns and get the duration
+                const patternDuration = this.schedulePatterns(startTime, songKey, isMinor);
+
+                if (this.debug) console.log(`Pattern duration: ${patternDuration.toFixed(2)} seconds`);
+
+                // Store the loop data for reuse
+                this.loopData = {
+                    key: songKey,
+                    isMinor: isMinor,
+                    duration: patternDuration
+                };
+
+                // Set up proper looping with precise timing
+                this.loopTimeoutId = setTimeout(() => {
+                    this.scheduleLoop();
+                }, (patternDuration * 1000) - 250); // Schedule slightly before end for seamless transition
+
+                this.isPlaying = true;
+            }
+
+            // Schedule the next loop
+            scheduleLoop() {
+                if (!this.isPlaying || !this.loopData) return;
+
+                // Schedule the next loop to start exactly when the previous one ends
+                const startTime = this.audioContext.currentTime;
+
+                if (this.debug) console.log(`Scheduling next loop at ${startTime.toFixed(3)}`);
+
+                // Use the same key/patterns for consistency
+                const patternDuration = this.schedulePatterns(
+                    startTime,
+                    this.loopData.key,
+                    this.loopData.isMinor
+                );
+
+                // Schedule the next loop
+                this.loopTimeoutId = setTimeout(() => {
+                    this.scheduleLoop();
+                }, (patternDuration * 1000) - 250);
+            }
+
+            // Stop the music
+            stop() {
+                if (!this.isPlaying) return;
+
+                console.log("Stopping music playback");
+
+                // Clear loop timeout
+                if (this.loopTimeoutId) {
+                    clearTimeout(this.loopTimeoutId);
+                    this.loopTimeoutId = null;
+                }
+
+                // Fade out over 2 seconds
+                const now = this.audioContext.currentTime;
+                this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+                this.masterGain.gain.linearRampToValueAtTime(0, now + 2);
+
+                // Set state after fade completes
+                setTimeout(() => {
+                    this.isPlaying = false;
+                }, 2000);
+            }
+
+            // Set volume level
+            setVolume(volume) {
+                this.musicVolume = Math.max(0, Math.min(1, volume));
+                this.masterGain.gain.value = this.musicVolume;
+            }
+        }
+
+        // Initialize the music system
+        let synthwaveMusic;
+
+        // Add music controls to UI
+        function setupMusicControls() {
+            // Create music UI elements
+            const musicControls = document.createElement('div');
+            musicControls.className = 'music-controls';
+            musicControls.style.cssText = `
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background-color: rgba(30, 30, 60, 0.8);
+        color: white;
+        border: 1px solid rgba(100, 100, 255, 0.7);
+        padding: 10px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        z-index: 100;
+        box-shadow: 0 0 15px rgba(80, 80, 255, 0.5);
+    `;
+
+            // Create toggle button
+            const toggleButton = document.createElement('button');
+            toggleButton.textContent = 'Play Music';
+            toggleButton.style.cssText = `
+        background-color: rgba(60, 60, 255, 0.7);
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: bold;
+        text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    `;
+
+            // Create volume control
+            const volumeControl = document.createElement('div');
+            volumeControl.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+
+            const volumeLabel = document.createElement('label');
+            volumeLabel.textContent = 'Volume:';
+            volumeLabel.style.cssText = 'font-size: 14px; text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);';
+
+            const volumeSlider = document.createElement('input');
+            volumeSlider.type = 'range';
+            volumeSlider.min = '0';
+            volumeSlider.max = '100';
+            volumeSlider.value = '30';
+            volumeSlider.style.cssText = `
+        width: 100px;
+        accent-color: rgb(100, 100, 255);
+    `;
+
+            volumeControl.appendChild(volumeLabel);
+            volumeControl.appendChild(volumeSlider);
+
+            // Create debug toggle
+            const debugToggle = document.createElement('button');
+            debugToggle.textContent = 'Debug: Off';
+            debugToggle.style.cssText = `
+        background-color: rgba(60, 60, 60, 0.5);
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+    `;
+            let debugEnabled = false;
+
+            // Add elements to controls
+            musicControls.appendChild(toggleButton);
+            musicControls.appendChild(volumeControl);
+            musicControls.appendChild(debugToggle);
+
+            // Add to document
+            document.body.appendChild(musicControls);
+
+            // Create music instance lazily on first click
+            let musicInitialized = false;
+
+            // Set up event listeners
+            toggleButton.addEventListener('click', () => {
+                if (!musicInitialized) {
+                    // Initialize music on first click
+                    try {
+                        synthwaveMusic = new SynthwaveMusic();
+
+                        // Force resume audio context
+                        synthwaveMusic.forceInit();
+
+                        if (debugEnabled) {
+                            synthwaveMusic.enableDebug();
+                        }
+
+                        musicInitialized = true;
+                    } catch (error) {
+                        console.error("Error initializing music:", error);
+                        alert("There was an error starting the music. See console for details.");
+                        return;
+                    }
+                }
+
+                if (!synthwaveMusic.isPlaying) {
+                    console.log("Starting music playback");
+                    synthwaveMusic.play();
+                    toggleButton.textContent = 'Pause Music';
+                    toggleButton.style.backgroundColor = 'rgba(255, 60, 60, 0.7)';
+                } else {
+                    console.log("Stopping music playback");
+                    synthwaveMusic.stop();
+                    toggleButton.textContent = 'Play Music';
+                    toggleButton.style.backgroundColor = 'rgba(60, 60, 255, 0.7)';
+                }
+            });
+
+            // Volume slider control
+            volumeSlider.addEventListener('input', () => {
+                if (musicInitialized) {
+                    const volume = volumeSlider.value / 100;
+                    synthwaveMusic.setVolume(volume);
+                }
+            });
+
+            // Debug toggle
+            debugToggle.addEventListener('click', () => {
+                debugEnabled = !debugEnabled;
+                debugToggle.textContent = debugEnabled ? 'Debug: On' : 'Debug: Off';
+                debugToggle.style.backgroundColor = debugEnabled ?
+                    'rgba(60, 255, 60, 0.5)' : 'rgba(60, 60, 60, 0.5)';
+
+                if (musicInitialized && debugEnabled) {
+                    synthwaveMusic.enableDebug();
+                    synthwaveMusic.checkConnections();
+                }
+            });
+        }
+
+        // Create beat-synchronized neon pulse effect for visuals
+        function createNeonPulseEffect() {
+            // BPM synchronization - match the music's BPM
+            const bpm = 115;
+            const beatInterval = 60 / bpm;
+
+            // Track the last beat time
+            let lastBeatTime = 0;
+
+            // Pulse function to call in animation loop
+            return {
+                update: function (timestamp) {
+                    // Convert timestamp to seconds
+                    const timeInSeconds = timestamp / 1000;
+
+                    // Calculate beat position
+                    const beatPosition = timeInSeconds / beatInterval;
+                    const currentBeat = Math.floor(beatPosition);
+
+                    // Check if we're on a new beat
+                    if (currentBeat > lastBeatTime) {
+                        lastBeatTime = currentBeat;
+                        return true; // New beat
+                    }
+
+                    // Calculate how far we are between beats (0-1)
+                    const beatProgress = beatPosition - currentBeat;
+                    return beatProgress; // Return progress through beat
+                }
+            };
+        }
+
+        // Initialize music and connect to visualization effects
+        function initializeMusicAndEffects() {
+            // Set up music controls
+            setupMusicControls();
+
+            // Create beat-sync effect
+            const beatSync = createNeonPulseEffect();
+
+            // Check if animate function exists in global scope
+            if (typeof animate === 'function') {
+                // Store original animate function
+                const originalAnimate = animate;
+
+                // Replace with enhanced animation loop that includes beat sync
+                window.animate = function () {
+                    // Call original animation function
+                    originalAnimate();
+
+                    // Add beat-synchronized effects
+                    const timestamp = performance.now();
+                    const beatProgress = beatSync.update(timestamp);
+
+                    // If we just hit a beat, create a pulse
+                    if (beatProgress === true) {
+                        // Pulse the bloom effect if it exists
+                        if (typeof composer !== 'undefined' && composer.passes && composer.passes[1]) {
+                            const bloomPass = composer.passes[1];
+                            const originalStrength = bloomPass.strength;
+
+                            // Temporarily increase bloom strength
+                            bloomPass.strength = originalStrength * 1.5;
+
+                            // Reset after a short time
+                            setTimeout(() => {
+                                bloomPass.strength = originalStrength;
+                            }, 100);
+                        }
+                    }
+
+                    // Subtle continuous beat animation for energized components
+                    if (typeof beatProgress === 'number' && typeof components !== 'undefined') {
+                        // Create beat curve with exponential falloff
+                        const beatCurve = Math.pow(1 - beatProgress, 2);
+
+                        // Apply to energized components
+                        components.forEach(component => {
+                            if (component.energized) {
+                                const obj = component.object3D;
+
+                                obj.children.forEach(child => {
+                                    if (child.material && child.material.emissiveIntensity) {
+                                        // Add beat-synchronized pulsing to the normal pulsing
+                                        const normalPulse = 0.5 + 0.3 * Math.sin(Date.now() * 0.003);
+                                        const beatPulse = 0.2 * beatCurve;
+                                        child.material.emissiveIntensity = normalPulse + beatPulse;
+                                    }
+                                });
+                            }
+                        });
+                    }
+                };
+            }
+        }
+
+        // Initialize Audio Context only after user interaction to comply with autoplay policies
+        document.addEventListener('click', function initAudio() {
+            if (!synthwaveMusic) {
+                // Preload AudioContext - won't start sound yet, but prepares it
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                // Resume it (in case it starts in suspended state)
+                if (context.state === 'suspended') {
+                    context.resume();
+                }
+            }
+            // Remove this initialization listener once triggered
+            document.removeEventListener('click', initAudio);
+        }, { once: true });
+
+        // Add CSS for music controls
+        const style = document.createElement('style');
+        style.textContent = `
+.music-controls button:hover {
+    background-color: rgba(100, 100, 255, 0.9) !important;
+    box-shadow: 0 0 10px rgba(100, 100, 255, 0.7);
+}
+.music-controls button[data-playing="true"]:hover {
+    background-color: rgba(255, 100, 100, 0.9) !important;
+}
+.music-controls input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 5px;
+    background: rgba(80, 80, 255, 0.4);
+    border-radius: 5px;
+    outline: none;
+}
+.music-controls input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    background: rgb(100, 100, 255);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 5px rgba(100, 100, 255, 0.7);
+}
+.music-controls input[type="range"]::-moz-range-thumb {
+    width: 15px;
+    height: 15px;
+    background: rgb(100, 100, 255);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 5px rgba(100, 100, 255, 0.7);
+}
+`;
+        document.head.appendChild(style);
+
+        // Call initialization when document is ready
+        if (document.readyState === 'complete') {
+            initializeMusicAndEffects();
+        } else {
+            window.addEventListener('load', initializeMusicAndEffects);
+        }
+
+
+    </script>
+</body>
+
+</html>
