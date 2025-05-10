@@ -430,7 +430,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const bgMusic = document.getElementById('bg-music');
             const musicToggle = document.getElementById('music-toggle');
-            const volumeSlider = document.getElementById('volume-slider');
+            const volumeSlider = document.getElementById('volume-slider');            
 
             // Set initial volume
             bgMusic.volume = volumeSlider.value / 100;
@@ -464,16 +464,16 @@
                 console.warn('Autoplay was prevented:', error);
                 musicToggle.textContent = 'Play Music';
                 musicToggle.classList.remove('playing');
-                
+
                 // Add a one-time click listener to the document to enable audio on first interaction
                 document.addEventListener('click', function initAudio() {
-                if (bgMusic.paused) {
-                    bgMusic.play().then(() => {
-                    musicToggle.textContent = 'Pause Music';
-                    musicToggle.classList.add('playing');
-                    }).catch(e => console.error('Audio still failed to play:', e));
-                }
-                document.removeEventListener('click', initAudio);
+                    if (bgMusic.paused) {
+                        bgMusic.play().then(() => {
+                            musicToggle.textContent = 'Pause Music';
+                            musicToggle.classList.add('playing');
+                        }).catch(e => console.error('Audio still failed to play:', e));
+                    }
+                    document.removeEventListener('click', initAudio);
                 }, { once: true });
             });
 
@@ -563,7 +563,7 @@
         const ENERGY_GREEN = 1;
         const ENERGY_BLUE = 2;
 
-        // Colors
+        // Colors (original color set)
         const COLOR_RED_NEON = new THREE.Color(1, 0.235, 0.235);
         const COLOR_GREEN_NEON = new THREE.Color(0.235, 1, 0.235);
         const COLOR_BLUE_NEON = new THREE.Color(0.235, 0.235, 1);
@@ -571,6 +571,15 @@
         const COLOR_CYAN_NEON = new THREE.Color(0.235, 1, 1);
         const COLOR_MAGENTA_NEON = new THREE.Color(1, 0.235, 1);
         const COLOR_WHITE_NEON = new THREE.Color(0.86, 0.86, 0.86);
+        
+        //Brighter Color Set
+        // COLOR_RED_NEON.set(1, 0.2, 0.2);
+        // COLOR_GREEN_NEON.set(0.2, 1, 0.2);
+        // COLOR_BLUE_NEON.set(0.2, 0.2, 1);
+        // COLOR_YELLOW_NEON.set(1, 1, 0.2);
+        // COLOR_CYAN_NEON.set(0.2, 1, 1);
+        // COLOR_MAGENTA_NEON.set(1, 0.2, 1);
+        // COLOR_WHITE_NEON.set(0.9, 0.9, 0.9);        
 
         const ENERGY_COLORS = {
             [ENERGY_RED]: COLOR_RED_NEON,
@@ -587,6 +596,19 @@
         // Grid settings
         const GRID_SIZE = 5; // 5x5 grid for first level
         const CELL_SIZE = 1; // Size of each grid cell
+
+        const musicToggle = document.getElementById('music-toggle');
+        const volumeSlider = document.getElementById('volume-slider');
+
+        // Victory Audio Assets
+        const victoryAudio = {
+            winSound: new Audio('./assets/audio/power-up-type-1-230548.mp3'),
+            successJingle: new Audio('./assets/audio/yay-6120.mp3')
+        };
+
+        // Set volume for audio effects
+        victoryAudio.winSound.volume = 1.0;
+        victoryAudio.successJingle.volume = 1.0;
 
         // Game state
         let scene, camera, renderer, composer;
@@ -705,24 +727,55 @@
             document.getElementById('loading-bar').style.width = `${percent}%`;
         }
 
-        // Set up the scene environment
+        // Set up the scene environment (Original)
+        // function setupEnvironment() {
+        //     // Add ambient light
+        //     const ambientLight = new THREE.AmbientLight(0x222233, 0.5);
+        //     scene.add(ambientLight);
+
+        //     // Add directional light for shadows
+        //     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        //     directionalLight.position.set(5, 10, 5);
+        //     directionalLight.castShadow = true;
+        //     scene.add(directionalLight);
+
+        //     // Add subtle point lights for atmosphere
+        //     const pointLight1 = new THREE.PointLight(0x3333ff, 1, 20);
+        //     pointLight1.position.set(-8, 5, -8);
+        //     scene.add(pointLight1);
+
+        //     const pointLight2 = new THREE.PointLight(0xff3333, 1, 20);
+        //     pointLight2.position.set(8, 5, 8);
+        //     scene.add(pointLight2);
+
+        //     // Create grid
+        //     createGrid();
+
+        //     // Create a background environment
+        //     createBackgroundScene();
+        // }
+        
+        // Updated lighting
         function setupEnvironment() {
-            // Add ambient light
-            const ambientLight = new THREE.AmbientLight(0x222233, 0.5);
+            // Set darker background for better contrast
+            scene.background = new THREE.Color(0.01, 0.01, 0.02);
+            
+            // Add ambient light - REDUCED INTENSITY
+            const ambientLight = new THREE.AmbientLight(0x222233, 0.3);
             scene.add(ambientLight);
 
-            // Add directional light for shadows
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            // Add directional light for shadows - INCREASED INTENSITY
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
             directionalLight.position.set(5, 10, 5);
             directionalLight.castShadow = true;
             scene.add(directionalLight);
 
-            // Add subtle point lights for atmosphere
-            const pointLight1 = new THREE.PointLight(0x3333ff, 1, 20);
+            // Add subtle point lights for atmosphere - OPTIMIZED
+            const pointLight1 = new THREE.PointLight(0x3333ff, 1.2, 15);
             pointLight1.position.set(-8, 5, -8);
             scene.add(pointLight1);
 
-            const pointLight2 = new THREE.PointLight(0xff3333, 1, 20);
+            const pointLight2 = new THREE.PointLight(0xff3333, 1.2, 15);
             pointLight2.position.set(8, 5, 8);
             scene.add(pointLight2);
 
@@ -732,6 +785,7 @@
             // Create a background environment
             createBackgroundScene();
         }
+      
 
         // Create grid for component placement
         function createGrid() {
@@ -981,20 +1035,20 @@
             const renderPass = new RenderPass(scene, camera);
             composer.addPass(renderPass);
 
-            // Unreal Bloom pass for the neon glow
+            // Unreal Bloom pass for the neon glow -
             const bloomPass = new UnrealBloomPass(
                 new THREE.Vector2(window.innerWidth, window.innerHeight),
-                1.5,    // strength
-                0.4,    // radius
-                0.85    // threshold
+                1.2,    // strength (decreased from 1.5)
+                0.3,    // radius (decreased from 0.4)
+                0.6     // threshold (decreased from 0.85)
             );
             composer.addPass(bloomPass);
 
-            // Anti-aliasing pass
+            // Anti-aliasing pass - SIMPLIFIED FOR PERFORMANCE
             const fxaaPass = new ShaderPass(FXAAShader);
             fxaaPass.material.uniforms['resolution'].value.set(
-                1 / (window.innerWidth * renderer.getPixelRatio()),
-                1 / (window.innerHeight * renderer.getPixelRatio())
+                1 / (window.innerWidth * Math.min(window.devicePixelRatio, 1.5)),
+                1 / (window.innerHeight * Math.min(window.devicePixelRatio, 1.5))
             );
             composer.addPass(fxaaPass);
         }
@@ -1111,8 +1165,19 @@
                     } else { // Horizontal (LEFT/RIGHT)
                         wireGeometry.rotateZ(Math.PI / 2); // Rotate for horizontal orientation
                     }
+                    // Create translucent wire material
+                    const wireMaterial = new THREE.MeshStandardMaterial({
+                        color: glowColor,
+                        metalness: 0.8,
+                        roughness: 0.2,
+                        emissive: glowColor,
+                        emissiveIntensity: energized ? 0.8 : 0.3,
+                        transparent: true,         // Make it transparent
+                        opacity: energized ? 0.8 : 0.6  // More translucent when not energized
+                    });
 
-                    const wire = new THREE.Mesh(wireGeometry, glowMaterial);
+                    const wire = new THREE.Mesh(wireGeometry, wireMaterial);
+                    wire.position.y = 0.3;  // Position wire at same height as connection pins
                     group.add(wire);
                     break;
 
@@ -1151,7 +1216,7 @@
                     const pinMesh = new THREE.Mesh(pinGeometry, pinMaterial);
 
                     // Position pin at the back of the LED (opposite to facing direction)
-                    pinMesh.position.set(0, 0.2, -0.4);
+                    pinMesh.position.set(0, 0.3, -0.4);
                     pinMesh.rotation.x = Math.PI / 2; // Lay the pin flat
                     group.add(pinMesh);
 
@@ -1203,7 +1268,7 @@
             }
             
             #help-button {
-                top: 10px;
+                top: 20px;
                 right: 10px;
             }
             
@@ -1835,7 +1900,7 @@
                     const wireMaterial = new THREE.MeshBasicMaterial({
                         color: COMPONENT_COLORS[COMPONENT_WIRE],
                         transparent: true,
-                        opacity: 0.5
+                        opacity: 0.4  // More translucent for preview
                     });
 
                     // Determine best direction automatically based on neighbors
@@ -1849,6 +1914,7 @@
                     }
 
                     previewMesh = new THREE.Mesh(wireGeometry, wireMaterial);
+                    previewMesh.position.y = 0.3;  // Position preview at same height as connection pins
                     break;
             }
 
@@ -1983,10 +2049,16 @@
                         metalness: 0.8,
                         roughness: 0.2,
                         emissive: color,
-                        emissiveIntensity: component.energized ? 0.8 : 0.3
+                        emissiveIntensity: component.energized ? 0.8 : 0.3,
+                        transparent: true,        // Make it transparent
+                        opacity: component.energized ? 0.8 : 0.6  // More translucent when not energized
                     });
 
                     const wireMesh = new THREE.Mesh(wireGeometry, material);
+                    
+                    //Wire grid height
+                    wireMesh.position.y = 0.3;
+
                     obj.add(wireMesh);
                 } else {
                     // For other components, rotate direction and update 3D model rotation
@@ -2285,9 +2357,38 @@
                             ENERGY_COLORS[component.energyType] :
                             COMPONENT_COLORS[component.type];
 
+                    // Update opacity based on energized state
+                    if (obj.children[0].material.transparent) {
+                        obj.children[0].material.opacity = component.energized ? 0.8 : 0.6;
+                    }                            
+
                         obj.children[0].material.color.copy(color);
                         obj.children[0].material.emissive.copy(color);
-                        obj.children[0].material.emissiveIntensity = component.energized ? 0.8 : 0.3;
+                        obj.children[0].material.emissiveIntensity = component.energized ? 3.0 : 0.1;
+                    }
+                    
+                    // Add/remove point light based on energized state
+                    if (component.energized) {
+                        // Check if light already exists
+                        let hasLight = false;
+                        obj.children.forEach(child => {
+                            if (child.type === 'PointLight') hasLight = true;
+                        });
+
+                        if (!hasLight) {
+                            const light = new THREE.PointLight(
+                                new THREE.Color(ENERGY_COLORS[component.energyType]),
+                                0.8,  // Increased intensity
+                                1.2   // Increased distance
+                            );
+                            light.position.y = 0.2;
+                            obj.add(light);
+                        }
+                    } else {
+                        // Remove any existing lights
+                        obj.children.forEach(child => {
+                            if (child.type === 'PointLight') obj.remove(child);
+                        });
                     }
                     break;
 
@@ -2300,7 +2401,7 @@
 
                         obj.children[1].material.color.copy(color);
                         obj.children[1].material.emissive.copy(color);
-                        obj.children[1].material.emissiveIntensity = component.energized ? 0.8 : 0.3;
+                        obj.children[1].material.emissiveIntensity = component.energized ? 1.5 : 0.1;
                     }
 
                     // Add/remove point light based on energized state
@@ -2314,8 +2415,8 @@
                         if (!hasLight) {
                             const light = new THREE.PointLight(
                                 new THREE.Color(ENERGY_COLORS[component.energyType]),
-                                1,
-                                2
+                                2.0,  // Much brighter
+                                3.5   // Larger radius
                             );
                             light.position.y = 0.5;
                             obj.add(light);
@@ -2325,6 +2426,36 @@
                         obj.children.forEach(child => {
                             if (child.type === 'PointLight') obj.remove(child);
                         });
+                    }
+                    break;
+                    
+                case COMPONENT_POWER_SOURCE:
+                    // Power source updates
+                    if (component.energized && obj.children.length > 1) {
+                        // Update core sphere to be brighter
+                        if (obj.children[1] && obj.children[1].material) {
+                            obj.children[1].material.emissiveIntensity = 1.2;
+                        }
+                        
+                        // Add/update point light
+                        let hasLight = false;
+                        obj.children.forEach(child => {
+                            if (child.type === 'PointLight') {
+                                hasLight = true;
+                                child.intensity = 1.5;
+                                child.distance = 2.5;
+                            }
+                        });
+                        
+                        if (!hasLight) {
+                            const light = new THREE.PointLight(
+                                new THREE.Color(ENERGY_COLORS[component.energyType]),
+                                1.5,
+                                2.5
+                            );
+                            light.position.y = 0.45;
+                            obj.add(light);
+                        }
                     }
                     break;
             }
@@ -2368,6 +2499,21 @@
 
         // Create energy flow animations
         function createEnergyFlowAnimations() {
+            // Clear existing particle animations
+            energyParticles.forEach(particle => {
+                // Update position based on progress
+                const { x1, z1, x2, z2 } = particle.path;
+                const progress = particle.progress;
+
+                // Interpolate position
+                particle.object.position.x = x1 + (x2 - x1) * progress;
+                particle.object.position.z = z1 + (z2 - z1) * progress;
+                // CHANGE THIS LINE:
+                particle.object.position.y = 0.3;  // Exactly match wire height
+            });
+
+            energyParticles = [];
+
             // For each energy path, create flowing particles
             energyPaths.forEach(path => {
                 const color = ENERGY_COLORS[path.energyType];
@@ -2378,27 +2524,23 @@
                 const x2 = path.x2 - Math.floor(GRID_SIZE / 2);
                 const z2 = path.z2 - Math.floor(GRID_SIZE / 2);
 
-                // Get components on both ends to determine proper path direction
-                const comp1 = getComponentAt(path.x1, path.z1);
-                const comp2 = getComponentAt(path.x2, path.z2);
-
-                // Create 2-3 particles along this path
+                // Create only 2 larger particles for better performance and visibility
                 for (let i = 0; i < 2; i++) {
-                    // Create particle geometry
-                    const particleGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+                    // Create particle geometry - LARGER SIZE, LOWER POLY
+                    const particleGeometry = new THREE.SphereGeometry(0.05, 6, 6);
                     const particleMaterial = new THREE.MeshBasicMaterial({
                         color: color,
                         transparent: true,
-                        opacity: 0.8
+                        opacity: 1.0  // Full opacity for better visibility
                     });
 
                     const particleMesh = new THREE.Mesh(particleGeometry, particleMaterial);
 
                     // Initial position (starting point of path)
-                    particleMesh.position.set(x1, 0.2, z1);
+                    particleMesh.position.set(x1, 0.3, z1);
 
-                    // Add point light
-                    const light = new THREE.PointLight(color, 0.5, 0.8);
+                    // Add BRIGHTER point light
+                    const light = new THREE.PointLight(color, 0.8, 1.0);
                     particleMesh.add(light);
 
                     scene.add(particleMesh);
@@ -2408,7 +2550,7 @@
                         object: particleMesh,
                         path: { x1, z1, x2, z2 },
                         progress: i * 0.5, // Stagger particles
-                        speed: 0.02 + Math.random() * 0.01
+                        speed: 0.015 + Math.random() * 0.005 // SLOWER for better visibility
                     });
                 }
             });
@@ -2439,35 +2581,390 @@
                     console.log("LEVEL COMPLETE!");
                     isLevelComplete = true;
 
-                    // Show completion message
-                    document.getElementById('level-complete').style.display = 'block';
-
-                    // Celebration effects
+                    // Start celebration effects
                     celebrate();
                 }
             }
         }
 
-        // Celebration effects
+        // Victory Particle System
+        class ParticleSystem {
+            constructor(scene) {
+                this.scene = scene;
+                this.particles = [];
+                this.maxParticles = 50;
+            }
+
+            createParticle(position, color, size, velocity, lifetime, gravityEffect = 0) {
+                const geometry = new THREE.SphereGeometry(size, 8, 8);
+                const material = new THREE.MeshBasicMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: 1.0
+                });
+
+                const particle = new THREE.Mesh(geometry, material);
+
+                // Add a point light to some particles for extra glow
+                if (Math.random() > 0.7) {
+                    const light = new THREE.PointLight(color, 0.5, 2);
+                    particle.add(light);
+                }
+
+                particle.position.copy(position);
+
+                // Store particle properties
+                particle.userData = {
+                    velocity: velocity,
+                    lifetime: lifetime,
+                    age: 0,
+                    gravityEffect: gravityEffect,
+                    initialSize: size
+                };
+
+                this.scene.add(particle);
+                this.particles.push(particle);
+
+                // Remove oldest particles if we exceed the maximum
+                if (this.particles.length > this.maxParticles) {
+                    const oldParticle = this.particles.shift();
+                    this.scene.remove(oldParticle);
+                }
+
+                return particle;
+            }
+
+            update(deltaTime) {
+                const particlesToRemove = [];
+
+                // Update each particle
+                this.particles.forEach(particle => {
+                    const userData = particle.userData;
+
+                    // Update age
+                    userData.age += deltaTime;
+
+                    // Update position based on velocity
+                    particle.position.x += userData.velocity.x * deltaTime;
+                    particle.position.y += userData.velocity.y * deltaTime;
+                    particle.position.z += userData.velocity.z * deltaTime;
+
+                    // Apply gravity effect if specified
+                    if (userData.gravityEffect > 0) {
+                        userData.velocity.y -= userData.gravityEffect * deltaTime;
+                    }
+
+                    // Calculate lifetime ratio (0 to 1)
+                    const lifeRatio = userData.age / userData.lifetime;
+
+                    // Fade out based on lifetime
+                    if (lifeRatio < 0.7) {
+                        // First 70% maintain full opacity
+                        particle.material.opacity = 1.0;
+                    } else {
+                        // Last 30% fade out
+                        particle.material.opacity = 1.0 - ((lifeRatio - 0.7) / 0.3);
+                    }
+
+                    // Scale down slightly over time
+                    const scaleRatio = 1.0 - (lifeRatio * 0.3);
+                    particle.scale.set(scaleRatio, scaleRatio, scaleRatio);
+
+                    // Mark for removal if lifetime is exceeded
+                    if (userData.age >= userData.lifetime) {
+                        particlesToRemove.push(particle);
+                    }
+                });
+
+                // Remove expired particles
+                particlesToRemove.forEach(particle => {
+                    const index = this.particles.indexOf(particle);
+                    if (index !== -1) {
+                        this.particles.splice(index, 1);
+                    }
+                    this.scene.remove(particle);
+                });
+            }
+
+            clear() {
+                // Remove all particles
+                this.particles.forEach(particle => {
+                    this.scene.remove(particle);
+                });
+                this.particles = [];
+            }
+        }
+
+        // Enhanced celebration function
         function celebrate() {
-            // Find all LEDs
+            console.log("CELEBRATION STARTING!");
+
+            // Create particle system if it doesn't exist
+            if (!window.victoryParticles) {
+                window.victoryParticles = new ParticleSystem(scene);
+            }
+
+            // Find all LEDs for celebration effects
             const leds = components.filter(c => c.type === COMPONENT_LED);
 
-            // Make them pulse more intensely
+            // Make LEDs pulse more intensely
             leds.forEach(led => {
                 const obj = led.object3D;
 
-                // Increase light intensity
+                // Increase light intensity on LEDs
                 obj.children.forEach(child => {
                     if (child.type === 'PointLight') {
-                        child.intensity = 2;
-                        child.distance = 5;
+                        child.intensity = 3;
+                        child.distance = 8;
+
+                        // Animate intensity over time
+                        const originalIntensity = child.intensity;
+
+                        // Create a pulse animation
+                        const pulseAnimation = setInterval(() => {
+                            child.intensity = originalIntensity * (1 + Math.random() * 0.5);
+                        }, 100);
+
+                        // Clear animation after celebration
+                        setTimeout(() => {
+                            clearInterval(pulseAnimation);
+                            child.intensity = 2;
+                            child.distance = 5;
+                        }, 5000);
                     }
                 });
             });
 
-            // ToDo: Add particle effects, sounds, something exciting...
+            // Play sound effects with slight delay between them
+            setTimeout(() => {
+                victoryAudio.winSound.play();
+            }, 200);
+
+            setTimeout(() => {
+                victoryAudio.successJingle.play();
+            }, 800);
+
+            // Create a central explosion effect
+            //createExplosionEffect();
+
+            // Create circuit completion effect
+            createCircuitCompletionEffect();
+
+            // Flash screen briefly
+            //flashScreen();
+
+            // Show level complete message after celebration effects
+            setTimeout(() => {
+                document.getElementById('level-complete').style.display = 'block';
+            }, 3000);
         }
+
+        // Create an explosion effect at each LED
+        function createExplosionEffect() {
+            // Find all LEDs
+            const leds = components.filter(c => c.type === COMPONENT_LED);
+
+            // Create explosion at each LED
+            leds.forEach(led => {
+                const position = led.object3D.position.clone();
+                position.y += 0.5; // Lift explosion slightly above LED
+
+                // Color based on LED energy type
+                const color = new THREE.Color(ENERGY_COLORS[led.energyType]);
+
+                // Create initial flash
+                const flashGeometry = new THREE.SphereGeometry(0.8, 16, 16);
+                const flashMaterial = new THREE.MeshBasicMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: 0.8
+                });
+
+                const flash = new THREE.Mesh(flashGeometry, flashMaterial);
+                flash.position.copy(position);
+                scene.add(flash);
+
+                // Animate flash
+                let scale = 1.0;
+                const flashAnimation = setInterval(() => {
+                    scale += 0.2;
+                    flash.scale.set(scale, scale, scale);
+                    flash.material.opacity = Math.max(0, 0.8 - ((scale - 1) * 0.2));
+                }, 50);
+
+                // Remove flash after animation
+                setTimeout(() => {
+                    clearInterval(flashAnimation);
+                    scene.remove(flash);
+                }, 1000);
+
+                // Create intense point light at explosion center
+                const explosionLight = new THREE.PointLight(color, 5, 10);
+                explosionLight.position.copy(position);
+                scene.add(explosionLight);
+
+                // Animate light intensity
+                let intensity = 5;
+                const lightAnimation = setInterval(() => {
+                    intensity -= 0.2;
+                    explosionLight.intensity = Math.max(0, intensity);
+                }, 100);
+
+                // Remove light after animation
+                setTimeout(() => {
+                    clearInterval(lightAnimation);
+                    scene.remove(explosionLight);
+                }, 2500);
+
+                // Create particle burst
+                for (let i = 0; i < 50; i++) {
+                    // Random direction
+                    const angle = Math.random() * Math.PI * 2;
+                    const z = Math.random() * 2 - 1; // -1 to 1
+                    const planarMagnitude = Math.sqrt(1 - z * z);
+
+                    const dir = new THREE.Vector3(
+                        planarMagnitude * Math.cos(angle),
+                        planarMagnitude * Math.sin(angle),
+                        z
+                    );
+
+                    // Random speed
+                    const speed = 0.5 + Math.random() * 2.5;
+
+                    // Velocity
+                    const velocity = new THREE.Vector3(
+                        dir.x * speed,
+                        dir.y * speed,
+                        dir.z * speed
+                    );
+
+                    // Random size
+                    const size = 0.05 + Math.random() * 0.15;
+
+                    // Random lifetime
+                    const lifetime = 1.0 + Math.random() * 2.0;
+
+                    // Random color variations
+                    const colorVariation = new THREE.Color(
+                        color.r * (0.8 + Math.random() * 0.4),
+                        color.g * (0.8 + Math.random() * 0.4),
+                        color.b * (0.8 + Math.random() * 0.4)
+                    );
+
+                    // Create particle with slight gravity
+                    victoryParticles.createParticle(
+                        position,
+                        colorVariation,
+                        size,
+                        velocity,
+                        lifetime,
+                        0.5 // Gravity effect
+                    );
+                }
+            });
+        }
+
+        // Create a circuit completion effect that travels along the energy paths
+        function createCircuitCompletionEffect() {
+            // Create particles that follow energy paths
+            energyPaths.forEach(path => {
+                // Calculate world positions
+                const x1 = path.x1 - Math.floor(GRID_SIZE / 2);
+                const z1 = path.z1 - Math.floor(GRID_SIZE / 2);
+                const x2 = path.x2 - Math.floor(GRID_SIZE / 2);
+                const z2 = path.z2 - Math.floor(GRID_SIZE / 2);
+
+                const color = ENERGY_COLORS[path.energyType];
+
+                // Create multiple waves of particles along each path
+                for (let wave = 0; wave < 3; wave++) {
+                    setTimeout(() => {
+                        // Create several particles for each wave
+                        for (let i = 0; i < 15; i++) {
+                            // Random position along the path
+                            const t = Math.random();
+                            const pos = new THREE.Vector3(
+                                x1 + (x2 - x1) * t,
+                                0.2, // Slightly above the grid
+                                z1 + (z2 - z1) * t
+                            );
+
+                            // Random vertical velocity
+                            const velocity = new THREE.Vector3(
+                                0,
+                                0.5 + Math.random() * 1.0,
+                                0
+                            );
+
+                            // Random size
+                            const size = 0.5 ; //+ Math.random() * 0.1;
+
+                            // Random lifetime
+                            const lifetime = 1.0 + Math.random() * 1.5;
+
+                            // Create rising particle
+                            victoryParticles.createParticle(
+                                pos,
+                                color,
+                                size,
+                                velocity,
+                                lifetime,
+                                -0.1 // Negative gravity (rises faster over time)
+                            );
+                        }
+                    }, wave * 300); // Stagger the waves
+                }
+            });
+        }
+
+        // Flash the screen briefly for dramatic effect
+        function flashScreen() {
+            // Create a full-screen flash effect
+            const flashOverlay = document.createElement('div');
+            flashOverlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.1s ease-out;
+    z-index: 1000;
+  `;
+
+            document.body.appendChild(flashOverlay);
+
+            // Flash in
+            setTimeout(() => {
+                flashOverlay.style.opacity = '0.8';
+            }, 100);
+
+            // Flash out
+            setTimeout(() => {
+                flashOverlay.style.opacity = '0';
+            }, 250);
+
+            // Remove after animation
+            setTimeout(() => {
+                document.body.removeChild(flashOverlay);
+            }, 1000);
+        }
+
+        // Update the animation loop to include particle system updates
+        const originalAnimate = animate;
+        window.animate = function () {
+            // Call original animation function
+            originalAnimate();
+
+            // Update particle system if it exists
+            if (window.victoryParticles) {
+                const deltaTime = 0.016; // Approximately 60fps
+                victoryParticles.update(deltaTime);
+            }
+        };
 
         // Set up UI event listeners
         function setupEventListeners() {
@@ -2670,8 +3167,10 @@
             // Update controls
             controls.update();
 
-            // Update energy particles
-            energyParticles.forEach(particle => {
+            // Update energy particles - LIMIT UPDATES for performance
+            for (let i = 0; i < Math.min(energyParticles.length, 6); i++) {
+                const particle = energyParticles[i];
+                
                 // Update position based on progress
                 const { x1, z1, x2, z2 } = particle.path;
                 const progress = particle.progress;
@@ -2686,36 +3185,42 @@
                     particle.progress = 0;
                 }
 
-                // Pulse size and opacity
-                const pulse = 0.8 + 0.2 * Math.sin(Date.now() * 0.01);
-                particle.object.scale.set(pulse, pulse, pulse);
-                particle.object.material.opacity = 0.7 + 0.3 * pulse;
-            });
-
-            // Animate connection point highlights
-            scene.children.forEach(obj => {
-                if (obj.name && obj.name.startsWith('ConnectionPoint') && obj.userData) {
-                    const { originalOpacity, pulseFactor } = obj.userData;
-
-                    // Pulse opacity based on time
-                    const pulse = Math.sin(Date.now() * 0.003 + pulseFactor) * 0.3 + 0.7;
-                    obj.material.opacity = originalOpacity * pulse;
+                // Pulse size and opacity - LESS FREQUENT changes
+                const time = Date.now();
+                if (time % 30 === 0) { // Only update every ~30ms
+                    const pulse = 0.9 + 0.1 * Math.sin(time * 0.005);
+                    particle.object.scale.set(pulse * 1.5, pulse * 1.5, pulse * 1.5);
                 }
-            });
+            }
 
-            // Update component animations (pulsing effects for energized components)
-            components.forEach(component => {
-                if (component.energized) {
-                    const obj = component.object3D;
+            // Update connection point animations - LESS FREQUENT updates
+            if (Date.now() % 100 < 20) { // Update ~20% of the time
+                scene.children.forEach(obj => {
+                    if (obj.name && obj.name.startsWith('ConnectionPoint') && obj.userData) {
+                        const { originalOpacity, pulseFactor } = obj.userData;
+                        
+                        // Pulse opacity based on time
+                        const pulse = Math.sin(Date.now() * 0.002 + pulseFactor) * 0.3 + 0.7;
+                        obj.material.opacity = originalOpacity * pulse;
+                    }
+                });
+            }
 
-                    obj.children.forEach(child => {
-                        if (child.material && child.material.emissiveIntensity) {
-                            // Pulse emissive intensity
-                            child.material.emissiveIntensity = 0.5 + 0.3 * Math.sin(Date.now() * 0.003);
-                        }
-                    });
-                }
-            });
+            // Update component animations - LESS FREQUENT updates
+            if (Date.now() % 120 < 20) { // Update ~16% of the time
+                components.forEach(component => {
+                    if (component.energized) {
+                        const obj = component.object3D;
+                        
+                        obj.children.forEach(child => {
+                            if (child.material && child.material.emissiveIntensity) {
+                                // Pulse emissive intensity
+                                child.material.emissiveIntensity = 0.8 + 0.4 * Math.sin(Date.now() * 0.002);
+                            }
+                        });
+                    }
+                });
+            }
 
             // Render with post-processing
             composer.render();
