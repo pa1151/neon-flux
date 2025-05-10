@@ -667,7 +667,16 @@
 
             // Create camera
             camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 4, 4); // Positioned to view grid from a nice angle
+
+            // Set camera position based on screen size
+            if (window.innerWidth <= 768) {
+                // Mobile - position further back
+                camera.position.set(0, 9, 9);
+            } else {
+                // Desktop - closer position
+                camera.position.set(0, 4, 4);
+            }
+
             camera.lookAt(0, 0, 0);
 
             updateLoadingProgress(30);
