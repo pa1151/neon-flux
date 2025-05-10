@@ -396,6 +396,18 @@
         let isLevelComplete = false;
         let isComponentPlaced = false;
 
+        // Input and Touch Support
+        let touchStartTime = 0;
+        let lastTouchEnd = 0;
+        let touchStartPosition = { x: 0, y: 0 };
+        let isTouchMoving = false;
+        let longPressTimer = null;
+        let touchMode = "place"; // Default mode: "place", "rotate", "remove"
+        let touchModeButton = null;
+        let raycaster, mouse; // Make these global instead of local
+        let currentTouchMode = 'place';
+        let touchModeUI = null;
+
         // Component storage
         let components = [];
         let energyParticles = [];
@@ -963,11 +975,106 @@
             return componentData;
         }
 
+        // Touch start handler
+        function handleTouchStart(e) {
+            e.preventDefault();
+
+            // Convert touch to mouse coordinates for highlighting
+            if (e.touches.length > 0) {
+                const touch = e.touches[0];
+                mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+
+                // Update raycaster
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(gridPlane);
+
+                if (intersects.length > 0) {
+                    // Get intersection point on grid
+                    const point = intersects[0].point;
+
+                    // Convert to grid coordinates
+                    const gridX = Math.floor(point.x + GRID_SIZE / 2);
+                    const gridZ = Math.floor(point.z + GRID_SIZE / 2);
+
+                    // Check if within grid bounds
+                    if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
+                        // Update hovered cell
+                        hoveredCell = { x: gridX, y: gridZ };
+
+                        // Highlight the hovered cell
+                        highlightCell(gridX, gridZ);
+                    }
+                }
+            }
+        }
+
+        // Touch end handler
+        function handleTouchEnd(e) {
+            e.preventDefault();
+
+            // Only process if not touching UI elements
+            const targetElement = e.target;
+            if (targetElement.tagName === 'BUTTON' ||
+                targetElement.classList.contains('inventory-item') ||
+                targetElement !== renderer.domElement) {
+                return;
+            }
+
+            // Get touch position
+            const touch = e.changedTouches[0];
+            mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+
+            // Update raycaster
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(gridPlane);
+
+            if (intersects.length > 0) {
+                // Get intersection point on grid
+                const point = intersects[0].point;
+
+                // Convert to grid coordinates
+                const gridX = Math.floor(point.x + GRID_SIZE / 2);
+                const gridZ = Math.floor(point.z + GRID_SIZE / 2);
+
+                // Check if within grid bounds
+                if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
+                    // Check for double tap
+                    const now = Date.now();
+                    const doubleTapDelay = 300; // ms
+
+                    if (now - lastTapTime < doubleTapDelay) {
+                        // Double tap detected - force remove mode regardless of current mode
+                        removeComponentAt(gridX, gridZ);
+                        lastTapTime = 0; // Reset double-tap detection
+                    } else {
+                        // Single tap - perform action based on current mode
+                        switch (currentTouchMode) {
+                            case 'place':
+                                if (selectedComponent === COMPONENT_WIRE) {
+                                    placeWire(gridX, gridZ);
+                                }
+                                break;
+                            case 'rotate':
+                                rotateComponentAt(gridX, gridZ);
+                                break;
+                            case 'remove':
+                                removeComponentAt(gridX, gridZ);
+                                break;
+                        }
+
+                        lastTapTime = now;
+                    }
+                }
+            }
+        }
+
         // Set up interactive grid
         function setupInteractiveGrid() {
             // Create a raycaster for mouse interaction
-            const raycaster = new THREE.Raycaster();
-            const mouse = new THREE.Vector2();
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
 
             // Event listener for mouse movement
             window.addEventListener('mousemove', (event) => {
@@ -1889,6 +1996,10 @@
 
         // Set up UI event listeners
         function setupEventListeners() {
+
+            // Touch input support
+            setupTouchSupport();
+
             // Inventory item selection
             document.querySelectorAll('.inventory-item').forEach(item => {
                 item.addEventListener('click', () => {
@@ -1948,6 +2059,167 @@
                     1 / (window.innerHeight * renderer.getPixelRatio())
                 );
             });
+        }
+
+        function setupTouchSupport() {
+            // Only add if touch is available
+            if (!('ontouchstart' in window) &&
+                !(navigator.maxTouchPoints > 0) &&
+                !(navigator.msMaxTouchPoints > 0)) {
+                return; // Not a touch device
+            }
+
+            console.log("Adding touch support for mobile devices");
+
+            // Create touch mode UI
+            touchModeUI = document.createElement('div');
+            touchModeUI.id = 'touch-mode-ui';
+            touchModeUI.style.cssText = `
+        position: absolute;
+        bottom: 90px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(10, 10, 30, 0.7);
+        border: 1px solid rgba(60, 60, 255, 0.5);
+        border-radius: 10px;
+        padding: 5px;
+        z-index: 100;
+        display: flex;
+        gap: 5px;
+    `;
+
+            // Create mode buttons
+            const modes = [
+                { name: 'place', label: 'Place', color: 'rgba(60, 120, 255, 0.6)' },
+                { name: 'rotate', label: 'Rotate', color: 'rgba(255, 120, 60, 0.6)' },
+                { name: 'remove', label: 'Remove', color: 'rgba(255, 60, 60, 0.6)' }
+            ];
+
+            const buttons = {};
+
+            modes.forEach(mode => {
+                const button = document.createElement('button');
+                button.textContent = mode.label;
+                button.dataset.mode = mode.name;
+                button.style.cssText = `
+            background-color: ${mode.name === 'place' ? mode.color : 'rgba(30, 30, 60, 0.8)'};
+            color: white;
+            border: 2px solid ${mode.color};
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        `;
+
+                button.addEventListener('click', () => {
+                    // Update active mode
+                    currentTouchMode = mode.name;
+
+                    // Update all button appearances
+                    modes.forEach(m => {
+                        const btn = buttons[m.name];
+                        btn.style.backgroundColor = m.name === currentTouchMode ? m.color : 'rgba(30, 30, 60, 0.8)';
+                    });
+
+                    // Optional: Add haptic feedback
+                    if (navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+                });
+
+                buttons[mode.name] = button;
+                touchModeUI.appendChild(button);
+            });
+
+            document.body.appendChild(touchModeUI);
+
+            // Touch event handlers for grid interaction
+            renderer.domElement.addEventListener('touchstart', handleTouchStart, { passive: false });
+            renderer.domElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+            renderer.domElement.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+            // Add touch support to UI buttons
+            document.querySelectorAll('button').forEach(btn => {
+                if (btn.id !== 'touch-mode-ui') { // Skip the mode buttons we just created
+                    btn.addEventListener('touchend', e => {
+                        e.preventDefault();
+                        btn.click();
+                    });
+                }
+            });
+
+            // Add touch support to inventory items
+            document.querySelectorAll('.inventory-item').forEach(item => {
+                item.addEventListener('touchend', e => {
+                    e.preventDefault();
+                    item.click();
+                });
+            });
+
+            // Add mobile-friendly styles
+            const mobileStyles = document.createElement('style');
+            mobileStyles.textContent = `
+        @media (max-width: 768px) {
+            #level-info {
+                top: auto;
+                bottom: 160px;
+                left: 50%;
+                transform: translateX(-50%);
+                max-width: 90%;
+            }
+            
+            #help-button {
+                top: 10px;
+                right: 10px;
+            }
+            
+            .inventory-item {
+                width: 70px;
+                height: 70px;
+            }
+            
+            button {
+                min-height: 44px;
+                min-width: 44px;
+            }
+        }
+    `;
+            document.head.appendChild(mobileStyles);
+        }
+
+        // Handle touch move for grid highlighting
+        function handleTouchMove(e) {
+            e.preventDefault(); // Prevent scrolling
+
+            if (e.touches.length === 0) return;
+
+            // Convert touch to normalized device coordinates
+            const touch = e.touches[0];
+            mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+
+            // Update raycaster and find intersections
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(gridPlane);
+
+            if (intersects.length > 0) {
+                // Get intersection point on grid
+                const point = intersects[0].point;
+
+                // Convert to grid coordinates
+                const gridX = Math.floor(point.x + GRID_SIZE / 2);
+                const gridZ = Math.floor(point.z + GRID_SIZE / 2);
+
+                // Check if within grid bounds
+                if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
+                    // Update hovered cell
+                    hoveredCell = { x: gridX, y: gridZ };
+
+                    // Highlight the hovered cell
+                    highlightCell(gridX, gridZ);
+                }
+            }
         }
 
         // Animation loop
