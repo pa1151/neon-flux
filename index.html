@@ -327,6 +327,207 @@
         <button id="next-level">Next Level</button>
     </div>
 
+    <!-- Audio Element -->
+    <audio id="bg-music" loop>
+        <source src="./assets/audio/Nihilore - The Bright Lights of Summer.mp3" type="audio/mpeg">
+        Your browser does not support audio.
+    </audio>
+
+    <!-- Music Controls -->
+    <div class="music-controls">
+        <button id="music-toggle">Play Music</button>
+        <div class="volume-control">
+            <label for="volume-slider">Volume:</label>
+            <input type="range" id="volume-slider" min="0" max="100" value="50">
+        </div>
+    </div>
+
+
+    <style>
+        .music-controls {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            background-color: rgba(30, 30, 60, 0.8);
+            color: white;
+            border: 1px solid rgba(100, 100, 255, 0.7);
+            padding: 10px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 100;
+            box-shadow: 0 0 15px rgba(80, 80, 255, 0.5);
+        }
+
+        .music-controls button {
+            background-color: rgba(60, 60, 255, 0.7);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+
+        .music-controls button:hover {
+            background-color: rgba(100, 100, 255, 0.9);
+            box-shadow: 0 0 10px rgba(100, 100, 255, 0.7);
+        }
+
+        .music-controls button.playing {
+            background-color: rgba(255, 60, 60, 0.7);
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .volume-control label {
+            font-size: 14px;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+
+        .volume-control input[type="range"] {
+            width: 100px;
+            accent-color: rgb(100, 100, 255);
+            -webkit-appearance: none;
+            appearance: none;
+            height: 5px;
+            background: rgba(80, 80, 255, 0.4);
+            border-radius: 5px;
+            outline: none;
+        }
+
+        .volume-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            background: rgb(100, 100, 255);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(100, 100, 255, 0.7);
+        }
+
+        .volume-control input[type="range"]::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            background: rgb(100, 100, 255);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 5px rgba(100, 100, 255, 0.7);
+        }
+    </style>
+
+    <script>
+        // Set up audio controls after DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            const bgMusic = document.getElementById('bg-music');
+            const musicToggle = document.getElementById('music-toggle');
+            const volumeSlider = document.getElementById('volume-slider');
+
+            // Set initial volume
+            bgMusic.volume = volumeSlider.value / 100;
+
+            // Play/pause toggle
+            musicToggle.addEventListener('click', () => {
+                if (bgMusic.paused) {
+                    bgMusic.play()
+                        .then(() => {
+                            musicToggle.textContent = 'Pause Music';
+                            musicToggle.classList.add('playing');
+                        })
+                        .catch(error => {
+                            console.error('Error playing audio:', error);
+                            alert('Could not play audio. Please check if your browser allows autoplay.');
+                        });
+                } else {
+                    bgMusic.pause();
+                    musicToggle.textContent = 'Play Music';
+                    musicToggle.classList.remove('playing');
+                }
+            });
+
+            // Volume control
+            volumeSlider.addEventListener('input', () => {
+                bgMusic.volume = volumeSlider.value / 100;
+            });
+
+            // Try to autoplay immediately, but have a fallback for browsers that block autoplay
+            bgMusic.play().catch(error => {
+                console.warn('Autoplay was prevented:', error);
+                musicToggle.textContent = 'Play Music';
+                musicToggle.classList.remove('playing');
+                
+                // Add a one-time click listener to the document to enable audio on first interaction
+                document.addEventListener('click', function initAudio() {
+                if (bgMusic.paused) {
+                    bgMusic.play().then(() => {
+                    musicToggle.textContent = 'Pause Music';
+                    musicToggle.classList.add('playing');
+                    }).catch(e => console.error('Audio still failed to play:', e));
+                }
+                document.removeEventListener('click', initAudio);
+                }, { once: true });
+            });
+
+            // Add visual beat synchronization if desired
+            let beatSyncEnabled = true;
+
+            // Optional: Add a simple beat visualization effect that works with any music
+            if (beatSyncEnabled) {
+                // Create a simple visualizer that pulses components to the beat
+                const createSimpleBeatVisualizer = () => {
+                    // This would be greatly simplified from your original code
+                    // A basic approach could use AudioContext's AnalyserNode to detect beats
+                    // For now we'll use a simple periodic pulse
+
+                    return {
+                        update: (timestamp) => {
+                            // Simple pulse every 500ms (120 BPM)
+                            return Math.sin(timestamp * 0.004) * 0.5 + 0.5;
+                        }
+                    };
+                };
+
+                const beatVisualizer = createSimpleBeatVisualizer();
+
+                // Modify the animation loop to include beat visualization
+                const originalAnimate = window.animate;
+                window.animate = function () {
+                    // Call original animation
+                    originalAnimate();
+
+                    // Add simple beat visualization
+                    const timestamp = performance.now();
+                    const beatIntensity = beatVisualizer.update(timestamp);
+
+                    // Apply to energized components
+                    if (typeof components !== 'undefined') {
+                        components.forEach(component => {
+                            if (component.energized) {
+                                const obj = component.object3D;
+
+                                obj.children.forEach(child => {
+                                    if (child.material && child.material.emissiveIntensity) {
+                                        // Add a beat-synchronized pulse
+                                        child.material.emissiveIntensity = 0.5 + 0.5 * beatIntensity;
+                                    }
+                                });
+                            }
+                        });
+                    }
+                };
+            }
+        });
+    </script>
+
     <!-- Import Three.js and required extensions -->
     <script async src="https://cdn.jsdelivr.net/npm/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
 
@@ -398,7 +599,7 @@
 
         // Input and Touch Support
         let raycaster, mouse; // Global raycaster and mouse
-        
+
         let touchStartTime = 0; // For long press detection
         let touchStartPosition = { x: 0, y: 0 };
         let lastTouchEnd = 0;
@@ -978,20 +1179,20 @@
             return componentData;
         }
 
- // Add this function to your setupEventListeners function
-function setupIntuitiveTouch() {
-    // Only add if touch is available
-    if (!('ontouchstart' in window) && 
-        !(navigator.maxTouchPoints > 0) && 
-        !(navigator.msMaxTouchPoints > 0)) {
-        return; // Not a touch device
-    }
-    
-    console.log("Adding intuitive touch support for mobile devices");
-    
-    // Add mobile-friendly styles
-    const mobileStyles = document.createElement('style');
-    mobileStyles.textContent = `
+        // Add this function to your setupEventListeners function
+        function setupIntuitiveTouch() {
+            // Only add if touch is available
+            if (!('ontouchstart' in window) &&
+                !(navigator.maxTouchPoints > 0) &&
+                !(navigator.msMaxTouchPoints > 0)) {
+                return; // Not a touch device
+            }
+
+            console.log("Adding intuitive touch support for mobile devices");
+
+            // Add mobile-friendly styles
+            const mobileStyles = document.createElement('style');
+            mobileStyles.textContent = `
         @media (max-width: 768px) {
             #level-info {
                 top: auto;
@@ -1017,12 +1218,12 @@ function setupIntuitiveTouch() {
             }
         }
     `;
-    document.head.appendChild(mobileStyles);
-    
-    // Add touch feedback element for long press
-    const touchFeedback = document.createElement('div');
-    touchFeedback.id = 'touch-feedback';
-    touchFeedback.style.cssText = `
+            document.head.appendChild(mobileStyles);
+
+            // Add touch feedback element for long press
+            const touchFeedback = document.createElement('div');
+            touchFeedback.id = 'touch-feedback';
+            touchFeedback.style.cssText = `
         position: absolute;
         width: 50px;
         height: 50px;
@@ -1035,12 +1236,12 @@ function setupIntuitiveTouch() {
         z-index: 1000;
         transition: opacity 0.1s ease, transform 0.2s ease, background-color 0.3s ease;
     `;
-    document.body.appendChild(touchFeedback);
-    
-    // Add tiny tooltip to explain gestures (shown once)
-    const touchTip = document.createElement('div');
-    touchTip.id = 'touch-tip';
-    touchTip.style.cssText = `
+            document.body.appendChild(touchFeedback);
+
+            // Add tiny tooltip to explain gestures (shown once)
+            const touchTip = document.createElement('div');
+            touchTip.id = 'touch-tip';
+            touchTip.style.cssText = `
         position: absolute;
         bottom: 160px;
         left: 50%;
@@ -1057,7 +1258,7 @@ function setupIntuitiveTouch() {
         opacity: 0;
         transition: opacity 0.5s ease;
     `;
-    touchTip.innerHTML = `
+            touchTip.innerHTML = `
         <strong>Touch Controls:</strong>
         <ul style="text-align: left; padding-left: 15px; margin: 5px 0;">
             <li>Tap empty space to place selected component</li>
@@ -1067,282 +1268,282 @@ function setupIntuitiveTouch() {
         </ul>
         <div style="text-align: center; margin-top: 5px; font-size: 11px;">(Tap to dismiss)</div>
     `;
-    document.body.appendChild(touchTip);
-    
-    // Show tooltip after a short delay (first time only)
-    if (!localStorage.getItem('touchTipShown')) {
-        setTimeout(() => {
-            touchTip.style.opacity = '1';
-            localStorage.setItem('touchTipShown', 'true');
-        }, 1500);
-    }
-    
-    // Touch event handlers for grid interaction
-    renderer.domElement.addEventListener('touchstart', handleTouchStart, { passive: false });
-    renderer.domElement.addEventListener('touchmove', handleTouchMove, { passive: false });
-    renderer.domElement.addEventListener('touchend', handleTouchEnd, { passive: false });
-    
-    // Hide tooltip when tapped
-    touchTip.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        touchTip.style.opacity = '0';
-        setTimeout(() => touchTip.style.display = 'none', 500);
-    });
-    
-    // Add touch support to UI buttons
-    document.querySelectorAll('button').forEach(btn => {
-        btn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            btn.click();
-        });
-    });
-    
-    // Add touch support to inventory items
-    document.querySelectorAll('.inventory-item').forEach(item => {
-        item.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            item.click();
-        });
-    });
-}
+            document.body.appendChild(touchTip);
 
-// Touch start handler
-function handleTouchStart(e) {
-    e.preventDefault();
-    
-    // Clear any existing long press timer
-    if (longPressTimer) {
-        clearTimeout(longPressTimer);
-    }
-    
-    // Record start time for long press detection
-    touchStartTime = Date.now();
-    
-    // Record touch position
-    if (e.touches.length > 0) {
-        const touch = e.touches[0];
-        touchStartPosition = {
-            x: touch.clientX,
-            y: touch.clientY
-        };
-        
-        // Convert touch to grid coordinates
-        mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-        
-        // Show touch feedback
-        const feedback = document.getElementById('touch-feedback');
-        if (feedback) {
-            feedback.style.left = touch.clientX + 'px';
-            feedback.style.top = touch.clientY + 'px';
-            feedback.style.opacity = '1';
-            feedback.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
-            feedback.style.transform = 'translate(-50%, -50%) scale(0.8)';
-        }
-        
-        // Update raycaster
-        raycaster.setFromCamera(mouse, camera);
-        const intersects = raycaster.intersectObject(gridPlane);
-        
-        if (intersects.length > 0) {
-            // Get intersection point on grid
-            const point = intersects[0].point;
-            
-            // Convert to grid coordinates
-            const gridX = Math.floor(point.x + GRID_SIZE / 2);
-            const gridZ = Math.floor(point.z + GRID_SIZE / 2);
-            
-            // Check if within grid bounds
-            if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
-                // Update hovered cell
-                hoveredCell = { x: gridX, y: gridZ };
-                
-                // Highlight the hovered cell
-                highlightCell(gridX, gridZ);
-                
-                // Check if there's a component at this position
-                const component = getComponentAt(gridX, gridZ);
-                
-                // Set long press timer for removal if there's a component
-                if (component) {
-                    longPressTimer = setTimeout(() => {
-                        // Visual feedback
-                        const feedback = document.getElementById('touch-feedback');
-                        if (feedback) {
-                            feedback.style.backgroundColor = 'rgba(255, 60, 60, 0.5)';
-                            feedback.style.transform = 'translate(-50%, -50%) scale(1.3)';
-                        }
-                        
-                        // Haptic feedback if available
-                        if (navigator.vibrate) {
-                            navigator.vibrate(100);
-                        }
-                        
-                        // Remove the component
-                        removeComponentAt(gridX, gridZ);
-                        
-                        // Reset long press timer
-                        longPressTimer = null;
-                    }, 800); // 800ms for long press
-                }
+            // Show tooltip after a short delay (first time only)
+            if (!localStorage.getItem('touchTipShown')) {
+                setTimeout(() => {
+                    touchTip.style.opacity = '1';
+                    localStorage.setItem('touchTipShown', 'true');
+                }, 1500);
             }
-        }
-    }
-}
 
-// Touch move handler
-function handleTouchMove(e) {
-    e.preventDefault();
-    
-    // Cancel long press if movement is detected
-    if (longPressTimer) {
-        // Measure movement distance
-        if (e.touches.length > 0) {
-            const touch = e.touches[0];
-            const deltaX = Math.abs(touch.clientX - touchStartPosition.x);
-            const deltaY = Math.abs(touch.clientY - touchStartPosition.y);
-            
-            // If moved more than 10 pixels, cancel long press
-            if (deltaX > 10 || deltaY > 10) {
+            // Touch event handlers for grid interaction
+            renderer.domElement.addEventListener('touchstart', handleTouchStart, { passive: false });
+            renderer.domElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+            renderer.domElement.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+            // Hide tooltip when tapped
+            touchTip.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                touchTip.style.opacity = '0';
+                setTimeout(() => touchTip.style.display = 'none', 500);
+            });
+
+            // Add touch support to UI buttons
+            document.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    btn.click();
+                });
+            });
+
+            // Add touch support to inventory items
+            document.querySelectorAll('.inventory-item').forEach(item => {
+                item.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    item.click();
+                });
+            });
+        }
+
+        // Touch start handler
+        function handleTouchStart(e) {
+            e.preventDefault();
+
+            // Clear any existing long press timer
+            if (longPressTimer) {
                 clearTimeout(longPressTimer);
-                longPressTimer = null;
-                
-                // Reset touch feedback
+            }
+
+            // Record start time for long press detection
+            touchStartTime = Date.now();
+
+            // Record touch position
+            if (e.touches.length > 0) {
+                const touch = e.touches[0];
+                touchStartPosition = {
+                    x: touch.clientX,
+                    y: touch.clientY
+                };
+
+                // Convert touch to grid coordinates
+                mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+
+                // Show touch feedback
                 const feedback = document.getElementById('touch-feedback');
                 if (feedback) {
-                    feedback.style.opacity = '0';
+                    feedback.style.left = touch.clientX + 'px';
+                    feedback.style.top = touch.clientY + 'px';
+                    feedback.style.opacity = '1';
+                    feedback.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+                    feedback.style.transform = 'translate(-50%, -50%) scale(0.8)';
                 }
-            }
-        }
-    }
-    
-    if (e.touches.length === 0) return;
-    
-    // Convert touch to normalized device coordinates
-    const touch = e.touches[0];
-    mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-    
-    // Update raycaster and find intersections
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObject(gridPlane);
-    
-    if (intersects.length > 0) {
-        // Get intersection point on grid
-        const point = intersects[0].point;
-        
-        // Convert to grid coordinates
-        const gridX = Math.floor(point.x + GRID_SIZE / 2);
-        const gridZ = Math.floor(point.z + GRID_SIZE / 2);
-        
-        // Check if within grid bounds
-        if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
-            // Update hovered cell
-            hoveredCell = { x: gridX, y: gridZ };
-            
-            // Highlight the hovered cell
-            highlightCell(gridX, gridZ);
-        }
-    }
-}
 
-// Touch end handler
-function handleTouchEnd(e) {
-    e.preventDefault();
-    
-    // Clear long press timer
-    if (longPressTimer) {
-        clearTimeout(longPressTimer);
-        longPressTimer = null;
-    }
-    
-    // Reset touch feedback
-    const feedback = document.getElementById('touch-feedback');
-    if (feedback) {
-        feedback.style.opacity = '0';
-    }
-    
-    // Only process if not touching UI elements
-    const targetElement = e.target;
-    if (targetElement.tagName === 'BUTTON' || 
-        targetElement.classList.contains('inventory-item') ||
-        targetElement !== renderer.domElement) {
-        return;
-    }
-    
-    // Get touch position
-    const touch = e.changedTouches[0];
-    mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-    
-    // Calculate touch duration
-    const touchDuration = Date.now() - touchStartTime;
-    const isLongPress = touchDuration > 800;
-    
-    // Update raycaster
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObject(gridPlane);
-    
-    if (intersects.length > 0) {
-        // Get intersection point on grid
-        const point = intersects[0].point;
-        
-        // Convert to grid coordinates
-        const gridX = Math.floor(point.x + GRID_SIZE / 2);
-        const gridZ = Math.floor(point.z + GRID_SIZE / 2);
-        
-        // Check if within grid bounds
-        if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
-            // Check if there's a component at this position
-            const component = getComponentAt(gridX, gridZ);
-            
-            // Logic based on context:
-            // 1. Double tap = remove component
-            // 2. Tap on component = rotate it
-            // 3. Tap on empty cell with selection = place component
-            
-            // Check for double tap (quick remove)
-            const now = Date.now();
-            const doubleTapDelay = 300; // ms
-            
-            if (now - lastTapTime < doubleTapDelay && component) {
-                // Double tap on component - remove it
-                removeComponentAt(gridX, gridZ);
-                lastTapTime = 0; // Reset double-tap detection
-                
-                // Haptic feedback if available
-                if (navigator.vibrate) {
-                    navigator.vibrate([20, 30, 20]);
-                }
-            } 
-            else if (!isLongPress && component) {
-                // Single tap on component - rotate it
-                rotateComponentAt(gridX, gridZ);
-                
-                // Haptic feedback if available
-                if (navigator.vibrate) {
-                    navigator.vibrate(30);
-                }
-                
-                lastTapTime = now;
-            }
-            else if (!isLongPress && !component && selectedComponent) {
-                // Tap on empty cell with component selected - place it
-                if (selectedComponent === COMPONENT_WIRE) {
-                    placeWire(gridX, gridZ);
-                    
-                    // Haptic feedback if available
-                    if (navigator.vibrate) {
-                        navigator.vibrate(30);
+                // Update raycaster
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(gridPlane);
+
+                if (intersects.length > 0) {
+                    // Get intersection point on grid
+                    const point = intersects[0].point;
+
+                    // Convert to grid coordinates
+                    const gridX = Math.floor(point.x + GRID_SIZE / 2);
+                    const gridZ = Math.floor(point.z + GRID_SIZE / 2);
+
+                    // Check if within grid bounds
+                    if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
+                        // Update hovered cell
+                        hoveredCell = { x: gridX, y: gridZ };
+
+                        // Highlight the hovered cell
+                        highlightCell(gridX, gridZ);
+
+                        // Check if there's a component at this position
+                        const component = getComponentAt(gridX, gridZ);
+
+                        // Set long press timer for removal if there's a component
+                        if (component) {
+                            longPressTimer = setTimeout(() => {
+                                // Visual feedback
+                                const feedback = document.getElementById('touch-feedback');
+                                if (feedback) {
+                                    feedback.style.backgroundColor = 'rgba(255, 60, 60, 0.5)';
+                                    feedback.style.transform = 'translate(-50%, -50%) scale(1.3)';
+                                }
+
+                                // Haptic feedback if available
+                                if (navigator.vibrate) {
+                                    navigator.vibrate(100);
+                                }
+
+                                // Remove the component
+                                removeComponentAt(gridX, gridZ);
+
+                                // Reset long press timer
+                                longPressTimer = null;
+                            }, 800); // 800ms for long press
+                        }
                     }
                 }
-                
-                lastTapTime = now;
             }
-            // Long press is handled in the timeout callback
         }
-    }
-}
+
+        // Touch move handler
+        function handleTouchMove(e) {
+            e.preventDefault();
+
+            // Cancel long press if movement is detected
+            if (longPressTimer) {
+                // Measure movement distance
+                if (e.touches.length > 0) {
+                    const touch = e.touches[0];
+                    const deltaX = Math.abs(touch.clientX - touchStartPosition.x);
+                    const deltaY = Math.abs(touch.clientY - touchStartPosition.y);
+
+                    // If moved more than 10 pixels, cancel long press
+                    if (deltaX > 10 || deltaY > 10) {
+                        clearTimeout(longPressTimer);
+                        longPressTimer = null;
+
+                        // Reset touch feedback
+                        const feedback = document.getElementById('touch-feedback');
+                        if (feedback) {
+                            feedback.style.opacity = '0';
+                        }
+                    }
+                }
+            }
+
+            if (e.touches.length === 0) return;
+
+            // Convert touch to normalized device coordinates
+            const touch = e.touches[0];
+            mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+
+            // Update raycaster and find intersections
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(gridPlane);
+
+            if (intersects.length > 0) {
+                // Get intersection point on grid
+                const point = intersects[0].point;
+
+                // Convert to grid coordinates
+                const gridX = Math.floor(point.x + GRID_SIZE / 2);
+                const gridZ = Math.floor(point.z + GRID_SIZE / 2);
+
+                // Check if within grid bounds
+                if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
+                    // Update hovered cell
+                    hoveredCell = { x: gridX, y: gridZ };
+
+                    // Highlight the hovered cell
+                    highlightCell(gridX, gridZ);
+                }
+            }
+        }
+
+        // Touch end handler
+        function handleTouchEnd(e) {
+            e.preventDefault();
+
+            // Clear long press timer
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+
+            // Reset touch feedback
+            const feedback = document.getElementById('touch-feedback');
+            if (feedback) {
+                feedback.style.opacity = '0';
+            }
+
+            // Only process if not touching UI elements
+            const targetElement = e.target;
+            if (targetElement.tagName === 'BUTTON' ||
+                targetElement.classList.contains('inventory-item') ||
+                targetElement !== renderer.domElement) {
+                return;
+            }
+
+            // Get touch position
+            const touch = e.changedTouches[0];
+            mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+
+            // Calculate touch duration
+            const touchDuration = Date.now() - touchStartTime;
+            const isLongPress = touchDuration > 800;
+
+            // Update raycaster
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(gridPlane);
+
+            if (intersects.length > 0) {
+                // Get intersection point on grid
+                const point = intersects[0].point;
+
+                // Convert to grid coordinates
+                const gridX = Math.floor(point.x + GRID_SIZE / 2);
+                const gridZ = Math.floor(point.z + GRID_SIZE / 2);
+
+                // Check if within grid bounds
+                if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
+                    // Check if there's a component at this position
+                    const component = getComponentAt(gridX, gridZ);
+
+                    // Logic based on context:
+                    // 1. Double tap = remove component
+                    // 2. Tap on component = rotate it
+                    // 3. Tap on empty cell with selection = place component
+
+                    // Check for double tap (quick remove)
+                    const now = Date.now();
+                    const doubleTapDelay = 300; // ms
+
+                    if (now - lastTapTime < doubleTapDelay && component) {
+                        // Double tap on component - remove it
+                        removeComponentAt(gridX, gridZ);
+                        lastTapTime = 0; // Reset double-tap detection
+
+                        // Haptic feedback if available
+                        if (navigator.vibrate) {
+                            navigator.vibrate([20, 30, 20]);
+                        }
+                    }
+                    else if (!isLongPress && component) {
+                        // Single tap on component - rotate it
+                        rotateComponentAt(gridX, gridZ);
+
+                        // Haptic feedback if available
+                        if (navigator.vibrate) {
+                            navigator.vibrate(30);
+                        }
+
+                        lastTapTime = now;
+                    }
+                    else if (!isLongPress && !component && selectedComponent) {
+                        // Tap on empty cell with component selected - place it
+                        if (selectedComponent === COMPONENT_WIRE) {
+                            placeWire(gridX, gridZ);
+
+                            // Haptic feedback if available
+                            if (navigator.vibrate) {
+                                navigator.vibrate(30);
+                            }
+                        }
+
+                        lastTapTime = now;
+                    }
+                    // Long press is handled in the timeout callback
+                }
+            }
+        }
 
         // Set up interactive grid
         function setupInteractiveGrid() {
@@ -2520,1476 +2721,6 @@ function handleTouchEnd(e) {
             composer.render();
         }
 
-        class SynthwaveMusic {
-            constructor() {
-                // Initialize Web Audio API
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                this.isPlaying = false;
-                this.musicVolume = 0.3; // Default volume level
-                this.bpm = 115; // Beats per minute (slightly adjusted for better vibe)
-                this.debug = false; // Debug logging flag
-
-                // Key elements for synthwave sound
-                this.bassline = null;
-                this.arpeggios = null;
-                this.drums = null;
-                this.lead = null;
-                this.pad = null;
-
-                // Loop control
-                this.loopTimeoutId = null;
-                this.loopData = null;
-
-                // Master volume control
-                this.masterGain = this.audioContext.createGain();
-                this.masterGain.gain.value = this.musicVolume;
-                this.masterGain.connect(this.audioContext.destination);
-
-                // Effects chain
-                this.reverbNode = this.createReverb(2.5); // Long reverb for that 80s sound
-                this.reverbNode.connect(this.masterGain);
-
-                // Compressor for that punchy synthwave sound
-                this.compressor = this.audioContext.createDynamicsCompressor();
-                this.compressor.threshold.value = -24;
-                this.compressor.knee.value = 30;
-                this.compressor.ratio.value = 12;
-                this.compressor.attack.value = 0.003;
-                this.compressor.release.value = 0.25;
-                this.compressor.connect(this.reverbNode);
-            }
-
-            // Create reverb effect
-            createReverb(seconds) {
-                const sampleRate = this.audioContext.sampleRate;
-                const length = sampleRate * seconds;
-                const impulse = this.audioContext.createBuffer(2, length, sampleRate);
-                const impulseL = impulse.getChannelData(0);
-                const impulseR = impulse.getChannelData(1);
-
-                for (let i = 0; i < length; i++) {
-                    // Fade out reverb over time
-                    const decay = Math.pow(1 - i / length, 2);
-                    impulseL[i] = (Math.random() * 2 - 1) * decay;
-                    impulseR[i] = (Math.random() * 2 - 1) * decay;
-                }
-
-                const convolver = this.audioContext.createConvolver();
-                convolver.buffer = impulse;
-                return convolver;
-            }
-
-            // Create synth oscillator with envelope
-            createSynth(type = 'sawtooth', options = {}) {
-                const oscillator = this.audioContext.createOscillator();
-                oscillator.type = type;
-
-                if (options.detune) {
-                    oscillator.detune.value = options.detune;
-                }
-
-                // Create gain node for envelope
-                const gainNode = this.audioContext.createGain();
-                gainNode.gain.value = 0;
-
-                // Create filter for tone shaping
-                const filter = this.audioContext.createBiquadFilter();
-                filter.type = options.filterType || 'lowpass';
-                filter.frequency.value = options.filterCutoff || 2000;
-                filter.Q.value = options.filterResonance || 1;
-
-                // Connect oscillator -> filter -> gain -> output
-                oscillator.connect(filter);
-                filter.connect(gainNode);
-
-                return {
-                    oscillator,
-                    gainNode,
-                    filter,
-
-                    // Play note with ADSR envelope
-                    playNote: (note, time, duration, velocity = 1.0) => {
-                        const now = time || this.audioContext.currentTime;
-                        const freq = typeof note === 'number' ? note : this.noteToFrequency(note);
-
-                        if (this.debug) {
-                            console.log(`Playing note: ${note} (${freq}Hz) at ${now.toFixed(3)} for ${duration.toFixed(3)}s`);
-                        }
-
-                        oscillator.frequency.setValueAtTime(freq, now);
-
-                        // Attack
-                        gainNode.gain.cancelScheduledValues(now);
-                        gainNode.gain.setValueAtTime(0, now);
-                        gainNode.gain.linearRampToValueAtTime(
-                            velocity * (options.maxGain || 0.8),
-                            now + (options.attack || 0.01)
-                        );
-
-                        // Decay to sustain
-                        gainNode.gain.linearRampToValueAtTime(
-                            velocity * (options.sustain || 0.5),
-                            now + (options.attack || 0.01) + (options.decay || 0.2)
-                        );
-
-                        // Release
-                        gainNode.gain.setValueAtTime(
-                            velocity * (options.sustain || 0.5),
-                            now + duration - (options.release || 0.1)
-                        );
-                        gainNode.gain.linearRampToValueAtTime(
-                            0,
-                            now + duration
-                        );
-
-                        // Filter envelope if specified
-                        if (options.filterEnvelope) {
-                            const baseFreq = options.filterCutoff || 2000;
-                            filter.frequency.cancelScheduledValues(now);
-                            filter.frequency.setValueAtTime(baseFreq, now);
-
-                            // Filter attack
-                            filter.frequency.linearRampToValueAtTime(
-                                baseFreq * options.filterEnvelope.amount,
-                                now + (options.filterEnvelope.attack || 0.01)
-                            );
-
-                            // Filter decay
-                            filter.frequency.exponentialRampToValueAtTime(
-                                baseFreq * (options.filterEnvelope.sustain || 1),
-                                now + (options.filterEnvelope.attack || 0.01) + (options.filterEnvelope.decay || 0.5)
-                            );
-                        }
-                    }
-                };
-            }
-
-            // Create noise generator (for drums)
-            createNoise() {
-                const bufferSize = 2 * this.audioContext.sampleRate;
-                const noiseBuffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
-                const output = noiseBuffer.getChannelData(0);
-
-                for (let i = 0; i < bufferSize; i++) {
-                    output[i] = Math.random() * 2 - 1;
-                }
-
-                const noise = this.audioContext.createBufferSource();
-                noise.buffer = noiseBuffer;
-                noise.loop = true;
-
-                const noiseFilter = this.audioContext.createBiquadFilter();
-                noiseFilter.type = 'highpass';
-                noiseFilter.frequency.value = 500;
-
-                const noiseGain = this.audioContext.createGain();
-                noiseGain.gain.value = 0;
-
-                noise.connect(noiseFilter);
-                noiseFilter.connect(noiseGain);
-
-                return {
-                    noise,
-                    noiseFilter,
-                    noiseGain,
-
-                    trigger: (time, duration, velocity, filterFreq = 500) => {
-                        const now = time || this.audioContext.currentTime;
-
-                        // Set filter frequency
-                        noiseFilter.frequency.setValueAtTime(filterFreq, now);
-
-                        // Attack
-                        noiseGain.gain.cancelScheduledValues(now);
-                        noiseGain.gain.setValueAtTime(0, now);
-                        noiseGain.gain.linearRampToValueAtTime(velocity * 0.5, now + 0.001);
-
-                        // Decay
-                        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-                    }
-                };
-            }
-
-            // Create synthwave bassline
-            createBassline() {
-                if (this.debug) console.log("Creating bassline...");
-
-                // Create bass synth with fat sound
-                const bass = this.createSynth('sawtooth', {
-                    attack: 0.005,
-                    decay: 0.1,
-                    sustain: 0.9,
-                    release: 0.1,
-                    maxGain: 0.8,
-                    filterCutoff: 800,
-                    filterResonance: 8,
-                    filterEnvelope: {
-                        attack: 0.005,
-                        decay: 0.2,
-                        sustain: 0.4,
-                        amount: 6
-                    }
-                });
-
-                // Add distortion for that synthwave grit
-                const distortion = this.audioContext.createWaveShaper();
-                function makeDistortionCurve(amount) {
-                    const k = amount;
-                    const n_samples = 44100;
-                    const curve = new Float32Array(n_samples);
-
-                    for (let i = 0; i < n_samples; ++i) {
-                        const x = i * 2 / n_samples - 1;
-                        curve[i] = (3 + k) * x * 20 * (1 / 3) / (Math.PI + k * Math.abs(x));
-                    }
-                    return curve;
-                }
-
-                distortion.curve = makeDistortionCurve(10);
-                distortion.oversample = '4x';
-
-                // Direct connection for bassline
-                bass.gainNode.disconnect();
-                bass.gainNode.connect(distortion);
-                distortion.connect(this.compressor);
-
-                // Start the oscillator
-                bass.oscillator.start();
-
-                if (this.debug) console.log("Bassline created and properly connected");
-
-                return bass;
-            }
-
-            // Create synthwave arpeggios
-            createArpeggios() {
-                if (this.debug) console.log("Creating arpeggios...");
-
-                // Create arpeggio synth (brighter than bass)
-                const arp = this.createSynth('sawtooth', {
-                    attack: 0.005,
-                    decay: 0.1,
-                    sustain: 0.3,
-                    release: 0.05,
-                    maxGain: 0.3,
-                    filterCutoff: 3000,
-                    filterResonance: 2
-                });
-
-                // Add chorus effect for width
-                const chorus1 = this.audioContext.createDelay();
-                const chorus2 = this.audioContext.createDelay();
-                chorus1.delayTime.value = 0.025;
-                chorus2.delayTime.value = 0.027;
-
-                const chorusGain1 = this.audioContext.createGain();
-                const chorusGain2 = this.audioContext.createGain();
-                chorusGain1.gain.value = 0.25;
-                chorusGain2.gain.value = 0.25;
-
-                // Connect the chain with chorus
-                arp.gainNode.disconnect();
-                arp.gainNode.connect(this.compressor);  // Direct signal
-                arp.gainNode.connect(chorus1);
-                arp.gainNode.connect(chorus2);
-                chorus1.connect(chorusGain1);
-                chorus2.connect(chorusGain2);
-                chorusGain1.connect(this.compressor);
-                chorusGain2.connect(this.compressor);
-
-                // Start the oscillator
-                arp.oscillator.start();
-
-                if (this.debug) console.log("Arpeggios created and properly connected");
-
-                return arp;
-            }
-
-            // Create synthwave drums
-            createDrums() {
-                if (this.debug) console.log("Creating drum sounds...");
-
-                // Kick drum - deep and punchy
-                const kick = this.createSynth('sine', {
-                    attack: 0.001,
-                    decay: 0.2,
-                    sustain: 0,
-                    release: 0.1,
-                    maxGain: 1.0
-                });
-
-                // Snare drum (using noise)
-                const snareFilter = this.audioContext.createBiquadFilter();
-                snareFilter.type = 'bandpass';
-                snareFilter.frequency.value = 1000;
-                snareFilter.Q.value = 1.5;
-
-                const snareGain = this.audioContext.createGain();
-                snareGain.gain.value = 0;
-
-                // Create noise buffer for snare
-                const bufferSize = 2 * this.audioContext.sampleRate;
-                const noiseBuffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
-                const output = noiseBuffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) {
-                    output[i] = Math.random() * 2 - 1;
-                }
-
-                // Create noise source for snare
-                const snareNoise = this.audioContext.createBufferSource();
-                snareNoise.buffer = noiseBuffer;
-                snareNoise.loop = true;
-                snareNoise.start();
-
-                // Connect snare chain
-                snareNoise.connect(snareFilter);
-                snareFilter.connect(snareGain);
-                snareGain.connect(this.compressor);
-
-                // Hi-hat (using noise with high-pass filter)
-                const hihatFilter = this.audioContext.createBiquadFilter();
-                hihatFilter.type = 'highpass';
-                hihatFilter.frequency.value = 7000;
-
-                const hihatGain = this.audioContext.createGain();
-                hihatGain.gain.value = 0;
-
-                // Create noise source for hi-hat
-                const hihatNoise = this.audioContext.createBufferSource();
-                hihatNoise.buffer = noiseBuffer; // Reuse the same noise buffer
-                hihatNoise.loop = true;
-                hihatNoise.start();
-
-                // Connect hi-hat chain
-                hihatNoise.connect(hihatFilter);
-                hihatFilter.connect(hihatGain);
-                hihatGain.connect(this.compressor);
-
-                // Ensure kick connects properly
-                kick.gainNode.connect(this.compressor);
-                kick.oscillator.start();
-
-                if (this.debug) console.log("Drums created and properly connected");
-
-                return {
-                    kick,
-                    snare: {
-                        trigger: (time, duration, velocity) => {
-                            const now = time || this.audioContext.currentTime;
-
-                            // Set envelope
-                            snareGain.gain.cancelScheduledValues(now);
-                            snareGain.gain.setValueAtTime(0, now);
-                            snareGain.gain.linearRampToValueAtTime(velocity * 0.7, now + 0.005);
-                            snareGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
-                        }
-                    },
-                    hihat: {
-                        trigger: (time, duration, velocity) => {
-                            const now = time || this.audioContext.currentTime;
-
-                            // Set envelope
-                            hihatGain.gain.cancelScheduledValues(now);
-                            hihatGain.gain.setValueAtTime(0, now);
-                            hihatGain.gain.linearRampToValueAtTime(velocity * 0.3, now + 0.001);
-                            hihatGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
-                        }
-                    }
-                };
-            }
-
-            // Create synthwave lead sound
-            createLead() {
-                if (this.debug) console.log("Creating lead synth...");
-
-                // Create lead synth with a brighter sound
-                const lead = this.createSynth('sawtooth', {
-                    attack: 0.01,
-                    decay: 0.3,
-                    sustain: 0.7,
-                    release: 0.2,
-                    maxGain: 0.4,
-                    detune: 10, // Slight detune for thickness
-                    filterCutoff: 5000,
-                    filterType: 'lowpass',
-                    filterResonance: 2,
-                    filterEnvelope: {
-                        attack: 0.05,
-                        decay: 0.5,
-                        sustain: 0.5,
-                        amount: 2
-                    }
-                });
-
-                // Add delay effect
-                const delay = this.audioContext.createDelay();
-                delay.delayTime.value = 60 / this.bpm / 2; // Eighth note delay
-
-                const feedback = this.audioContext.createGain();
-                feedback.gain.value = 0.4; // 40% feedback
-
-                // Connect the chain with delay
-                lead.gainNode.disconnect();
-                lead.gainNode.connect(this.compressor);  // Direct signal
-                lead.gainNode.connect(delay);
-                delay.connect(feedback);
-                feedback.connect(delay);
-                feedback.connect(this.compressor);
-
-                // Start the oscillator
-                lead.oscillator.start();
-
-                if (this.debug) console.log("Lead synth created and properly connected");
-
-                return lead;
-            }
-
-            // Create synthwave pad sound
-            createPad() {
-                if (this.debug) console.log("Creating pads...");
-
-                // Create multiple oscillators for a rich pad sound
-                const pad1 = this.createSynth('sawtooth', {
-                    attack: 1.5,
-                    decay: 1.0,
-                    sustain: 0.8,
-                    release: 2.0,
-                    maxGain: 0.15,
-                    detune: 0,
-                    filterCutoff: 1500,
-                    filterResonance: 1
-                });
-
-                const pad2 = this.createSynth('sawtooth', {
-                    attack: 1.5,
-                    decay: 1.0,
-                    sustain: 0.8,
-                    release: 2.0,
-                    maxGain: 0.15,
-                    detune: 7, // Slight detune for chorus effect
-                    filterCutoff: 1500,
-                    filterResonance: 1
-                });
-
-                // Connect to output
-                pad1.gainNode.connect(this.reverbNode); // More reverb for pads
-                pad2.gainNode.connect(this.reverbNode);
-
-                // Start oscillators
-                pad1.oscillator.start();
-                pad2.oscillator.start();
-
-                if (this.debug) console.log("Pads created and properly connected");
-
-                return { pad1, pad2 };
-            }
-
-            // Initialize all synth instruments
-            createSynthwaveSong() {
-                if (this.debug) console.log("Creating all instruments...");
-
-                try {
-                    // Create instruments in correct order
-                    this.drums = this.createDrums();
-                    this.bassline = this.createBassline();
-                    this.arpeggios = this.createArpeggios();
-                    this.lead = this.createLead();
-                    this.pad = this.createPad();
-
-                    if (this.debug) console.log("All instruments successfully initialized");
-                } catch (error) {
-                    console.error("Error creating instruments:", error);
-                }
-            }
-
-            // Generate bassline pattern
-            generateBassPattern(key = 'C', minor = true) {
-                // Base notes for the bassline
-                const root = key + '2';
-                const fifth = this.transposeNote(root, 7);
-                const sixth = this.transposeNote(root, minor ? 8 : 9);
-                const fourth = this.transposeNote(root, 5);
-
-                // Simple pattern alternating between notes
-                return [
-                    { note: root, duration: 2 },
-                    { note: root, duration: 2 },
-                    { note: this.transposeNote(root, 12), duration: 1 }, // One octave up
-                    { note: this.transposeNote(root, 12), duration: 1 },
-
-                    { note: sixth, duration: 2 },
-                    { note: sixth, duration: 2 },
-                    { note: this.transposeNote(sixth, 12), duration: 1 },
-                    { note: this.transposeNote(sixth, 12), duration: 1 },
-
-                    { note: fourth, duration: 2 },
-                    { note: fourth, duration: 2 },
-                    { note: this.transposeNote(fourth, 12), duration: 1 },
-                    { note: this.transposeNote(fourth, 12), duration: 1 },
-
-                    { note: fifth, duration: 2 },
-                    { note: fifth, duration: 2 },
-                    { note: this.transposeNote(fifth, 12), duration: 1 },
-                    { note: this.transposeNote(fifth, 12), duration: 1 }
-                ];
-            }
-
-            // Generate arpeggio pattern
-            generateArpPattern(key = 'C', minor = true) {
-                // Define chord tones
-                const i = [key + '4', this.transposeNote(key + '4', minor ? 3 : 4), this.transposeNote(key + '4', 7)];
-                const vi = [this.transposeNote(key + '4', minor ? 8 : 9), this.transposeNote(key + '4', minor ? 11 : 12), this.transposeNote(key + '4', minor ? 15 : 16)];
-                const iv = [this.transposeNote(key + '4', 5), this.transposeNote(key + '4', minor ? 8 : 9), this.transposeNote(key + '4', 12)];
-                const v = [this.transposeNote(key + '4', 7), this.transposeNote(key + '4', minor ? 10 : 11), this.transposeNote(key + '4', 14)];
-
-                // Arpeggio pattern for each chord
-                const pattern = [];
-
-                // Helper to add arpeggios
-                const addArpeggio = (chord, repeats = 4) => {
-                    for (let i = 0; i < repeats; i++) {
-                        pattern.push({ note: chord[0], duration: 0.5 });
-                        pattern.push({ note: chord[1], duration: 0.5 });
-                        pattern.push({ note: chord[2], duration: 0.5 });
-                        pattern.push({ note: chord[1], duration: 0.5 });
-                    }
-                };
-
-                // Add all chord arpeggios
-                addArpeggio(i, 2);
-                addArpeggio(vi, 2);
-                addArpeggio(iv, 2);
-                addArpeggio(v, 2);
-
-                return pattern;
-            }
-
-            // Generate drum pattern
-            generateDrumPattern() {
-                // Create a more upbeat, exciting 16-bar pattern
-                const pattern = [];
-
-                // Extended drum pattern (16 bars of drums = 64 beats)
-                for (let bar = 0; bar < 16; bar++) {
-                    // Kick on every quarter note with occasional variations
-                    for (let beat = 0; beat < 4; beat++) {
-                        // Main kicks
-                        pattern.push({
-                            type: 'kick',
-                            time: bar * 4 + beat,
-                            velocity: beat === 0 ? 1.0 : 0.8
-                        });
-
-                        // Add extra kick before 3rd beat in some bars for more drive
-                        if (beat === 2 && (bar % 4 !== 3)) {
-                            pattern.push({
-                                type: 'kick',
-                                time: bar * 4 + beat - 0.5,
-                                velocity: 0.7
-                            });
-                        }
-
-                        // Add quick double kick occasionally for variation
-                        if (beat === 3 && (bar % 8 === 7)) {
-                            pattern.push({
-                                type: 'kick',
-                                time: bar * 4 + beat + 0.75,
-                                velocity: 0.9
-                            });
-                        }
-                    }
-
-                    // Snare on beats 2 and 4 with ghost notes
-                    pattern.push({ type: 'snare', time: bar * 4 + 1, velocity: 0.8 });
-                    pattern.push({ type: 'snare', time: bar * 4 + 3, velocity: 0.8 });
-
-                    // Add ghost snare hit in different patterns
-                    if (bar % 4 === 1 || bar % 4 === 3) {
-                        pattern.push({ type: 'snare', time: bar * 4 + 3.75, velocity: 0.4 });
-                    }
-
-                    // Fill at the end of 8-bar phrases
-                    if (bar === 7 || bar === 15) {
-                        pattern.push({ type: 'snare', time: bar * 4 + 3.25, velocity: 0.5 });
-                        pattern.push({ type: 'snare', time: bar * 4 + 3.5, velocity: 0.6 });
-                        pattern.push({ type: 'snare', time: bar * 4 + 3.75, velocity: 0.7 });
-                    }
-
-                    // Hi-hats on sixteenth notes for driving rhythm
-                    for (let sixteenth = 0; sixteenth < 16; sixteenth++) {
-                        let velocity;
-
-                        // Different velocities for different positions
-                        if (sixteenth % 4 === 0) {
-                            velocity = 0.6; // Strong on the beat
-                        } else if (sixteenth % 2 === 0) {
-                            velocity = 0.4; // Medium on eighth notes
-                        } else if ((bar % 4 === 3) && (sixteenth >= 12)) {
-                            velocity = 0.5; // Accented during fills
-                        } else {
-                            velocity = 0.25; // Quiet on offbeats
-                        }
-
-                        // Every 4 bars, introduce open hi-hats on the offbeats in the last bar
-                        if (bar % 4 === 3 && sixteenth % 4 === 2) {
-                            pattern.push({
-                                type: 'hihat',
-                                time: bar * 4 + sixteenth * 0.25,
-                                velocity: 0.5,
-                                duration: 0.2 // Longer duration for open hi-hat
-                            });
-                        } else {
-                            pattern.push({
-                                type: 'hihat',
-                                time: bar * 4 + sixteenth * 0.25,
-                                velocity: velocity
-                            });
-                        }
-                    }
-                }
-
-                return pattern;
-            }
-
-            // Generate lead pattern - more interesting with variations
-            generateLeadPattern(key = 'C', minor = true) {
-                // Scale degrees for minor or major
-                const scale = minor ?
-                    [0, 2, 3, 5, 7, 8, 10, 12] : // Natural minor
-                    [0, 2, 4, 5, 7, 9, 11, 12];  // Major
-
-                // Create a pattern that only plays in the second half of the loop
-                const pattern = [];
-
-                // Create 32 beats of silence (8 bars) - lead starts halfway through pattern
-                for (let i = 0; i < 32; i++) {
-                    pattern.push({ note: null, duration: 0.5, rest: true });
-                }
-
-                // Create an interesting melody for second half (8 bars)
-                const melodySequence = [
-                    { degree: 7, duration: 1.5 },     // Octave
-                    { degree: 5, duration: 0.5 },     // Sixth
-                    { degree: 4, duration: 1.0 },     // Fifth
-                    { degree: 5, duration: 1.0 },     // Sixth
-                    { degree: 2, duration: 1.0 },     // Third
-                    { degree: 0, duration: 1.0 },     // Root
-                    { degree: 2, duration: 1.5 },     // Third
-                    { degree: 4, duration: 0.5 },     // Fifth
-                    { degree: 5, duration: 2.0 },     // Sixth
-                    { degree: 7, duration: 1.0 },     // Octave
-                    { degree: 5, duration: 1.0 },     // Sixth
-                    { degree: 4, duration: 1.0 },     // Fifth
-                    { degree: 2, duration: 1.0 },     // Third
-                    { degree: 4, duration: 0.5 },     // Fifth
-                    { degree: 2, duration: 0.5 },     // Third
-                    { degree: 0, duration: 2.0 },     // Root
-                    // Second phrase
-                    { degree: 7, duration: 1.0, octave: -1 }, // Seventh below
-                    { degree: 0, duration: 1.0 },     // Root
-                    { degree: 2, duration: 1.0 },     // Third
-                    { degree: 4, duration: 1.0 },     // Fifth
-                    { degree: 5, duration: 1.5 },     // Sixth
-                    { degree: 7, duration: 0.5 },     // Octave
-                    { degree: 5, duration: 1.0 },     // Sixth
-                    { degree: 7, duration: 1.0 },     // Octave
-                    { degree: 10, duration: 2.0 },    // Third above octave
-                    { degree: 7, duration: 2.0 },     // Octave
-                    { degree: 5, duration: 1.0 },     // Sixth
-                    { degree: 4, duration: 1.0 },     // Fifth
-                    { degree: 2, duration: 1.0 },     // Third
-                    { degree: 0, duration: 2.0 },     // Root
-                    { degree: 0, duration: 1.0, rest: true }  // Rest
-                ];
-
-                // Convert sequence to actual notes and add to pattern
-                let beatPosition = 32; // Start position (after silent section)
-
-                melodySequence.forEach(item => {
-                    if (item.rest) {
-                        pattern.push({ note: null, duration: item.duration, rest: true });
-                    } else {
-                        const octaveShift = item.octave || 0;
-                        const noteOctave = 5 + octaveShift; // Base octave for lead melody
-                        const note = this.transposeNote(key + noteOctave, scale[item.degree % scale.length]);
-                        pattern.push({ note: note, duration: item.duration });
-                    }
-                    beatPosition += item.duration;
-                });
-
-                return pattern;
-            }
-
-            // Generate pad pattern with longer chords
-            generatePadPattern(key = 'C', minor = true) {
-                if (this.debug) console.log(`Generating pad pattern in key: ${key} ${minor ? 'minor' : 'major'}`);
-
-                // Define chord root notes
-                const rootNote = key + '3';
-
-                // Safeguard against invalid note names
-                if (!/^[A-G][#b]?[0-8]$/.test(rootNote)) {
-                    if (this.debug) console.warn(`Invalid root note: ${rootNote}, defaulting to C3`);
-                    key = 'C'; // Default to C if invalid key
-                }
-
-                try {
-                    // Define chord root notes - fixed and validated
-                    const i = key + '3';  // Root
-                    const vi = this.transposeNote(key + '3', minor ? 8 : 9);  // 6th
-                    const iv = this.transposeNote(key + '3', 5);  // 4th
-                    const v = this.transposeNote(key + '3', 7);   // 5th
-
-                    if (this.debug) {
-                        console.log(`Chord roots: I=${i}, VI=${vi}, IV=${iv}, V=${v}`);
-                    }
-
-                    // Define chord intervals
-                    const minorChord = [0, 3, 7, 12]; // Root, minor third, fifth, octave
-                    const majorChord = [0, 4, 7, 12]; // Root, major third, fifth, octave
-
-                    // Create long chord tones
-                    const pattern = [];
-
-                    // Add chord tones with seconds offset for pad2 to create movement
-                    const addChord = (root, intervals, duration) => {
-                        if (this.debug) console.log(`Adding chord with root: ${root}, duration: ${duration}`);
-
-                        // First pad (pure chord)
-                        intervals.forEach(interval => {
-                            const note = this.transposeNote(root, interval);
-                            if (this.debug) console.log(`Pad1 note: ${note} (interval ${interval})`);
-
-                            pattern.push({
-                                synth: 'pad1',
-                                note: note,
-                                duration: duration
-                            });
-                        });
-
-                        // Second pad (with slight detune for richness)
-                        intervals.forEach(interval => {
-                            // Note: we don't use fractional intervals for transposition anymore
-                            // since that can lead to invalid notes
-                            const note = this.transposeNote(root, interval);
-                            if (this.debug) console.log(`Pad2 note: ${note} (interval ${interval})`);
-
-                            pattern.push({
-                                synth: 'pad2',
-                                note: note,
-                                duration: duration,
-                                detune: 7 // Instead of transposing by a fractional amount, use detune
-                            });
-                        });
-                    };
-
-                    // Create full 16-bar chord progression
-                    // Each chord lasts 4 bars (16 beats)
-                    addChord(i, minor ? minorChord : majorChord, 16);
-                    addChord(vi, minor ? minorChord : majorChord, 16);
-                    addChord(iv, minor ? minorChord : majorChord, 16);
-                    addChord(v, minor ? minorChord : majorChord, 16);
-
-                    return pattern;
-                } catch (e) {
-                    console.error("Error generating pad pattern:", e);
-
-                    // Return a simple safe pattern if something went wrong
-                    return [
-                        { synth: 'pad1', note: 'C3', duration: 64 },
-                        { synth: 'pad1', note: 'E3', duration: 64 },
-                        { synth: 'pad1', note: 'G3', duration: 64 },
-                        { synth: 'pad2', note: 'C3', duration: 64 },
-                        { synth: 'pad2', note: 'E3', duration: 64 },
-                        { synth: 'pad2', note: 'G3', duration: 64 }
-                    ];
-                }
-            }
-
-            // Helper method to convert notes to frequencies
-            noteToFrequency(note) {
-                if (typeof note !== 'string') {
-                    if (this.debug) console.warn("Invalid note:", note);
-                    return 440; // Default to A4
-                }
-
-                const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-                const octave = parseInt(note.slice(-1));
-                const noteName = note.slice(0, -1);
-                const noteIndex = notes.indexOf(noteName);
-
-                if (noteIndex === -1) {
-                    if (this.debug) console.warn("Unknown note name:", noteName);
-                    return 440; // Default to A4
-                }
-
-                // A4 = 440Hz, calculate relative to A4
-                const halfStepsFromA4 = (octave - 4) * 12 + noteIndex - 9;
-                return 440 * Math.pow(2, halfStepsFromA4 / 12);
-            }
-
-            // Transpose a note by semitones
-            transposeNote(note, semitones) {
-                if (typeof note !== 'string') {
-                    if (this.debug) console.warn(`Cannot transpose non-string note: ${note}`);
-                    return 'C4'; // Default to middle C if invalid
-                }
-
-                // Validate the input note format
-                if (!/^[A-G][#b]?[0-8]$/.test(note)) {
-                    if (this.debug) console.warn(`Invalid note format: ${note}`);
-                    return 'C4'; // Default to middle C if invalid
-                }
-
-                try {
-                    const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-
-                    // Handle flats by converting to equivalent sharps
-                    let normalizedNote = note;
-                    if (note.includes('b')) {
-                        const noteName = note.charAt(0);
-                        const octave = note.charAt(2);
-                        const noteIndex = notes.indexOf(noteName);
-                        if (noteIndex === 0) { // If it's Cb
-                            normalizedNote = 'B' + (parseInt(octave) - 1);
-                        } else {
-                            normalizedNote = notes[noteIndex - 1] + octave;
-                        }
-                    }
-
-                    const octave = parseInt(normalizedNote.slice(-1));
-                    const noteName = normalizedNote.replace(/[0-8]$/, '');
-                    const noteIndex = notes.indexOf(noteName);
-
-                    if (noteIndex === -1) {
-                        if (this.debug) console.warn(`Note name not found in scale: ${noteName}`);
-                        return 'C4'; // Default to middle C if invalid
-                    }
-
-                    // Validate semitones is a number
-                    if (typeof semitones !== 'number' || !isFinite(semitones)) {
-                        if (this.debug) console.warn(`Invalid semitones value: ${semitones}`);
-                        semitones = 0; // Default to no transposition if invalid
-                    }
-
-                    // Use integer semitones only
-                    semitones = Math.round(semitones);
-
-                    // Calculate new note index and octave
-                    let newIndex = noteIndex + semitones;
-                    let newOctave = octave + Math.floor(newIndex / 12);
-                    newIndex = ((newIndex % 12) + 12) % 12; // Ensure positive value
-
-                    // Ensure octave is in valid range (0-8)
-                    newOctave = Math.max(0, Math.min(8, newOctave));
-
-                    return notes[newIndex] + newOctave;
-                } catch (e) {
-                    console.error(`Error transposing note ${note} by ${semitones} semitones:`, e);
-                    return 'C4'; // Default to middle C if any error occurs
-                }
-            }
-
-            // Schedule all patterns
-            schedulePatterns(startTime, key = 'C', minor = true) {
-                if (this.debug) console.log("Scheduling patterns starting at", startTime.toFixed(3));
-
-                const beatDuration = 60 / this.bpm;
-
-                // Generate patterns
-                const bassPattern = this.generateBassPattern(key, minor);
-                const arpPattern = this.generateArpPattern(key, minor);
-                const drumPattern = this.generateDrumPattern();
-                const leadPattern = this.generateLeadPattern(key, minor);
-                const padPattern = this.generatePadPattern(key, minor);
-
-                if (this.debug) {
-                    console.log(`Generated patterns: 
-                Bass: ${bassPattern.length} notes
-                Arpeggios: ${arpPattern.length} notes
-                Drums: ${drumPattern.length} hits
-                Lead: ${leadPattern.length} notes
-                Pad: ${padPattern.length} notes`);
-                }
-
-                // Schedule bass notes
-                let bassTime = startTime;
-                let totalDuration = 0;
-                bassPattern.forEach(note => {
-                    if (!note.rest) {
-                        let freq;
-                        try {
-                            freq = typeof note.note === 'number' ? note.note : this.noteToFrequency(note.note);
-                            if (!isFinite(freq)) freq = 110; // Default to a safe low bass note
-                        } catch (e) {
-                            freq = 110;
-                            if (this.debug) console.warn(`Error processing bass note: ${note.note}`, e);
-                        }
-
-                        if (this.debug && note.duration > 0) {
-                            console.log(`Bass note: ${note.note} (${freq.toFixed(1)}Hz) at ${bassTime.toFixed(3)}`);
-                        }
-
-                        try {
-                            // Directly use frequency for increased reliability
-                            this.bassline.playNote(freq, bassTime, note.duration * beatDuration, 0.95);
-                        } catch (e) {
-                            if (this.debug) console.error(`Error playing bass note: ${note.note}`, e);
-                        }
-                    }
-                    bassTime += note.duration * beatDuration;
-                    totalDuration += note.duration * beatDuration;
-                });
-
-                // Schedule arpeggios
-                let arpTime = startTime;
-                arpPattern.forEach(note => {
-                    if (!note.rest) {
-                        try {
-                            this.arpeggios.playNote(note.note, arpTime, note.duration * beatDuration, 0.7);
-                        } catch (e) {
-                            if (this.debug) console.error(`Error playing arpeggio note: ${note.note}`, e);
-                        }
-                    }
-                    arpTime += note.duration * beatDuration;
-                });
-
-                // Schedule drums
-                drumPattern.forEach(hit => {
-                    const hitTime = startTime + hit.time * beatDuration;
-                    const hitDuration = hit.duration || 0.1; // Default duration if not specified
-
-                    try {
-                        switch (hit.type) {
-                            case 'kick':
-                                // For kick drum, use numeric frequency values directly
-                                const kickPitch = 60; // Fixed frequency for kick
-                                this.drums.kick.playNote(kickPitch, hitTime, 0.4, hit.velocity);
-                                break;
-
-                            case 'snare':
-                                this.drums.snare.trigger(hitTime, 0.2, hit.velocity);
-                                break;
-
-                            case 'hihat':
-                                this.drums.hihat.trigger(hitTime, hitDuration, hit.velocity);
-                                break;
-                        }
-                    } catch (e) {
-                        if (this.debug) console.error(`Error playing drum hit: ${hit.type}`, e);
-                    }
-                });
-
-                // Schedule lead melody
-                let leadTime = startTime;
-                leadPattern.forEach(note => {
-                    if (!note.rest && note.note) {
-                        try {
-                            this.lead.playNote(note.note, leadTime, note.duration * beatDuration, 0.7);
-                        } catch (e) {
-                            if (this.debug) console.error(`Error playing lead note: ${note.note}`, e);
-                        }
-                    }
-                    leadTime += note.duration * beatDuration;
-                });
-
-                // Schedule pad chords with extra safety
-                padPattern.forEach(chord => {
-                    try {
-                        // Validate pad note before playing
-                        if (!chord.note || typeof chord.note !== 'string') {
-                            if (this.debug) console.warn(`Invalid pad note: ${chord.note}, skipping`);
-                            return; // Skip this chord
-                        }
-
-                        // Pre-check the frequency to avoid errors
-                        const testFreq = this.noteToFrequency(chord.note);
-                        if (!isFinite(testFreq)) {
-                            if (this.debug) console.warn(`Invalid frequency for pad note ${chord.note}: ${testFreq}, skipping`);
-                            return; // Skip this chord
-                        }
-
-                        const synth = chord.synth === 'pad1' ? this.pad.pad1 : this.pad.pad2;
-
-                        // Apply detune if specified instead of using a detuned note
-                        if (chord.detune && synth.oscillator.detune) {
-                            const currentDetune = synth.oscillator.detune.value;
-                            synth.oscillator.detune.value = chord.detune;
-
-                            // Schedule the note
-                            synth.playNote(chord.note, startTime, chord.duration * beatDuration, 0.6);
-
-                            // Reset detune after scheduling
-                            synth.oscillator.detune.value = currentDetune;
-                        } else {
-                            // Just play the note normally
-                            synth.playNote(chord.note, startTime, chord.duration * beatDuration, 0.6);
-                        }
-                    } catch (e) {
-                        if (this.debug) console.error(`Error playing pad chord: ${chord.note}`, e);
-                    }
-                });
-
-                // Return total duration (use bass pattern as reference since it's the most standard)
-                return totalDuration;
-            }
-
-            // Enable debugging
-            enableDebug() {
-                this.debug = true;
-                console.log("Debug logging enabled for music system");
-            }
-
-            // Force initialization of audio context
-            forceInit() {
-                if (this.audioContext.state === 'suspended') {
-                    this.audioContext.resume().then(() => {
-                        console.log("AudioContext resumed successfully.");
-                    }).catch(err => {
-                        console.error("Error resuming AudioContext:", err);
-                    });
-                }
-
-                console.log("Audio context state:", this.audioContext.state);
-                return this.audioContext.state;
-            }
-
-            // Check all audio connections
-            checkConnections() {
-                console.log("--- AUDIO CONNECTION CHECK ---");
-
-                // Check audio context
-                console.log(`AudioContext state: ${this.audioContext.state}`);
-                console.log(`Master volume: ${this.masterGain.gain.value}`);
-
-                // Check instruments
-                const checkInstrument = (name, instrument) => {
-                    if (!instrument) {
-                        console.error(`${name} is not created!`);
-                        return false;
-                    }
-                    console.log(`${name} exists`);
-                    return true;
-                };
-
-                checkInstrument("Drums", this.drums);
-                checkInstrument("Bassline", this.bassline);
-                checkInstrument("Arpeggios", this.arpeggios);
-                checkInstrument("Lead", this.lead);
-                checkInstrument("Pad", this.pad);
-
-                console.log("--- END CHECK ---");
-            }
-
-            // Start the music
-            play() {
-                if (this.isPlaying) return;
-
-                // Make sure all instruments are created
-                if (!this.bassline || !this.drums || !this.arpeggios || !this.lead || !this.pad) {
-                    this.createSynthwaveSong();
-                }
-
-                // Resume audio context if suspended
-                if (this.audioContext.state === 'suspended') {
-                    this.audioContext.resume().then(() => {
-                        if (this.debug) console.log("AudioContext resumed successfully");
-                        this._startPlayback();
-                    }).catch(err => {
-                        console.error("Error resuming AudioContext:", err);
-                    });
-                } else {
-                    this._startPlayback();
-                }
-            }
-
-            // Internal method to start actual playback
-            _startPlayback() {
-                console.log("Starting music");
-
-                // Set volume
-                this.masterGain.gain.value = this.musicVolume;
-
-                // Start time with a small delay
-                const startTime = this.audioContext.currentTime + 0.1;
-
-                // Create song structure (randomized key for variety)
-                const songKeys = ['C', 'A', 'F', 'G'];
-                const songKey = songKeys[Math.floor(Math.random() * songKeys.length)];
-                const isMinor = true; // Force minor key for better synthwave feel
-
-                if (this.debug) console.log(`Starting song in ${songKey} ${isMinor ? 'minor' : 'major'}`);
-
-                // Schedule patterns and get the duration
-                const patternDuration = this.schedulePatterns(startTime, songKey, isMinor);
-
-                if (this.debug) console.log(`Pattern duration: ${patternDuration.toFixed(2)} seconds`);
-
-                // Store the loop data for reuse
-                this.loopData = {
-                    key: songKey,
-                    isMinor: isMinor,
-                    duration: patternDuration
-                };
-
-                // Set up proper looping with precise timing
-                this.loopTimeoutId = setTimeout(() => {
-                    this.scheduleLoop();
-                }, (patternDuration * 1000) - 250); // Schedule slightly before end for seamless transition
-
-                this.isPlaying = true;
-            }
-
-            // Schedule the next loop
-            scheduleLoop() {
-                if (!this.isPlaying || !this.loopData) return;
-
-                // Schedule the next loop to start exactly when the previous one ends
-                const startTime = this.audioContext.currentTime;
-
-                if (this.debug) console.log(`Scheduling next loop at ${startTime.toFixed(3)}`);
-
-                // Use the same key/patterns for consistency
-                const patternDuration = this.schedulePatterns(
-                    startTime,
-                    this.loopData.key,
-                    this.loopData.isMinor
-                );
-
-                // Schedule the next loop
-                this.loopTimeoutId = setTimeout(() => {
-                    this.scheduleLoop();
-                }, (patternDuration * 1000) - 250);
-            }
-
-            // Stop the music
-            stop() {
-                if (!this.isPlaying) return;
-
-                console.log("Stopping music playback");
-
-                // Clear loop timeout
-                if (this.loopTimeoutId) {
-                    clearTimeout(this.loopTimeoutId);
-                    this.loopTimeoutId = null;
-                }
-
-                // Fade out over 2 seconds
-                const now = this.audioContext.currentTime;
-                this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
-                this.masterGain.gain.linearRampToValueAtTime(0, now + 2);
-
-                // Set state after fade completes
-                setTimeout(() => {
-                    this.isPlaying = false;
-                }, 2000);
-            }
-
-            // Set volume level
-            setVolume(volume) {
-                this.musicVolume = Math.max(0, Math.min(1, volume));
-                this.masterGain.gain.value = this.musicVolume;
-            }
-        }
-
-        // Initialize the music system
-        let synthwaveMusic;
-
-        // Add music controls to UI
-        function setupMusicControls() {
-            // Create music UI elements
-            const musicControls = document.createElement('div');
-            musicControls.className = 'music-controls';
-            musicControls.style.cssText = `
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        background-color: rgba(30, 30, 60, 0.8);
-        color: white;
-        border: 1px solid rgba(100, 100, 255, 0.7);
-        padding: 10px;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        z-index: 100;
-        box-shadow: 0 0 15px rgba(80, 80, 255, 0.5);
-    `;
-
-            // Create toggle button
-            const toggleButton = document.createElement('button');
-            toggleButton.textContent = 'Play Music';
-            toggleButton.style.cssText = `
-        background-color: rgba(60, 60, 255, 0.7);
-        color: white;
-        border: none;
-        padding: 8px 15px;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-weight: bold;
-        text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
-    `;
-
-            // Create volume control
-            const volumeControl = document.createElement('div');
-            volumeControl.style.cssText = 'display: flex; align-items: center; gap: 8px;';
-
-            const volumeLabel = document.createElement('label');
-            volumeLabel.textContent = 'Volume:';
-            volumeLabel.style.cssText = 'font-size: 14px; text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);';
-
-            const volumeSlider = document.createElement('input');
-            volumeSlider.type = 'range';
-            volumeSlider.min = '0';
-            volumeSlider.max = '100';
-            volumeSlider.value = '30';
-            volumeSlider.style.cssText = `
-        width: 100px;
-        accent-color: rgb(100, 100, 255);
-    `;
-
-            volumeControl.appendChild(volumeLabel);
-            volumeControl.appendChild(volumeSlider);
-
-            // Create debug toggle
-            const debugToggle = document.createElement('button');
-            debugToggle.textContent = 'Debug: Off';
-            debugToggle.style.cssText = `
-        background-color: rgba(60, 60, 60, 0.5);
-        color: white;
-        border: none;
-        padding: 4px 8px;
-        border-radius: 3px;
-        cursor: pointer;
-        font-size: 12px;
-    `;
-            let debugEnabled = false;
-
-            // Add elements to controls
-            musicControls.appendChild(toggleButton);
-            musicControls.appendChild(volumeControl);
-            musicControls.appendChild(debugToggle);
-
-            // Add to document
-            document.body.appendChild(musicControls);
-
-            // Create music instance lazily on first click
-            let musicInitialized = false;
-
-            // Set up event listeners
-            toggleButton.addEventListener('click', () => {
-                if (!musicInitialized) {
-                    // Initialize music on first click
-                    try {
-                        synthwaveMusic = new SynthwaveMusic();
-
-                        // Force resume audio context
-                        synthwaveMusic.forceInit();
-
-                        if (debugEnabled) {
-                            synthwaveMusic.enableDebug();
-                        }
-
-                        musicInitialized = true;
-                    } catch (error) {
-                        console.error("Error initializing music:", error);
-                        alert("There was an error starting the music. See console for details.");
-                        return;
-                    }
-                }
-
-                if (!synthwaveMusic.isPlaying) {
-                    console.log("Starting music playback");
-                    synthwaveMusic.play();
-                    toggleButton.textContent = 'Pause Music';
-                    toggleButton.style.backgroundColor = 'rgba(255, 60, 60, 0.7)';
-                } else {
-                    console.log("Stopping music playback");
-                    synthwaveMusic.stop();
-                    toggleButton.textContent = 'Play Music';
-                    toggleButton.style.backgroundColor = 'rgba(60, 60, 255, 0.7)';
-                }
-            });
-
-            // Volume slider control
-            volumeSlider.addEventListener('input', () => {
-                if (musicInitialized) {
-                    const volume = volumeSlider.value / 100;
-                    synthwaveMusic.setVolume(volume);
-                }
-            });
-
-            // Debug toggle
-            debugToggle.addEventListener('click', () => {
-                debugEnabled = !debugEnabled;
-                debugToggle.textContent = debugEnabled ? 'Debug: On' : 'Debug: Off';
-                debugToggle.style.backgroundColor = debugEnabled ?
-                    'rgba(60, 255, 60, 0.5)' : 'rgba(60, 60, 60, 0.5)';
-
-                if (musicInitialized && debugEnabled) {
-                    synthwaveMusic.enableDebug();
-                    synthwaveMusic.checkConnections();
-                }
-            });
-        }
-
-        // Create beat-synchronized neon pulse effect for visuals
-        function createNeonPulseEffect() {
-            // BPM synchronization - match the music's BPM
-            const bpm = 115;
-            const beatInterval = 60 / bpm;
-
-            // Track the last beat time
-            let lastBeatTime = 0;
-
-            // Pulse function to call in animation loop
-            return {
-                update: function (timestamp) {
-                    // Convert timestamp to seconds
-                    const timeInSeconds = timestamp / 1000;
-
-                    // Calculate beat position
-                    const beatPosition = timeInSeconds / beatInterval;
-                    const currentBeat = Math.floor(beatPosition);
-
-                    // Check if we're on a new beat
-                    if (currentBeat > lastBeatTime) {
-                        lastBeatTime = currentBeat;
-                        return true; // New beat
-                    }
-
-                    // Calculate how far we are between beats (0-1)
-                    const beatProgress = beatPosition - currentBeat;
-                    return beatProgress; // Return progress through beat
-                }
-            };
-        }
-
-        // Initialize music and connect to visualization effects
-        function initializeMusicAndEffects() {
-            // Set up music controls
-            setupMusicControls();
-
-            // Create beat-sync effect
-            const beatSync = createNeonPulseEffect();
-
-            // Check if animate function exists in global scope
-            if (typeof animate === 'function') {
-                // Store original animate function
-                const originalAnimate = animate;
-
-                // Replace with enhanced animation loop that includes beat sync
-                window.animate = function () {
-                    // Call original animation function
-                    originalAnimate();
-
-                    // Add beat-synchronized effects
-                    const timestamp = performance.now();
-                    const beatProgress = beatSync.update(timestamp);
-
-                    // If we just hit a beat, create a pulse
-                    if (beatProgress === true) {
-                        // Pulse the bloom effect if it exists
-                        if (typeof composer !== 'undefined' && composer.passes && composer.passes[1]) {
-                            const bloomPass = composer.passes[1];
-                            const originalStrength = bloomPass.strength;
-
-                            // Temporarily increase bloom strength
-                            bloomPass.strength = originalStrength * 1.5;
-
-                            // Reset after a short time
-                            setTimeout(() => {
-                                bloomPass.strength = originalStrength;
-                            }, 100);
-                        }
-                    }
-
-                    // Subtle continuous beat animation for energized components
-                    if (typeof beatProgress === 'number' && typeof components !== 'undefined') {
-                        // Create beat curve with exponential falloff
-                        const beatCurve = Math.pow(1 - beatProgress, 2);
-
-                        // Apply to energized components
-                        components.forEach(component => {
-                            if (component.energized) {
-                                const obj = component.object3D;
-
-                                obj.children.forEach(child => {
-                                    if (child.material && child.material.emissiveIntensity) {
-                                        // Add beat-synchronized pulsing to the normal pulsing
-                                        const normalPulse = 0.5 + 0.3 * Math.sin(Date.now() * 0.003);
-                                        const beatPulse = 0.2 * beatCurve;
-                                        child.material.emissiveIntensity = normalPulse + beatPulse;
-                                    }
-                                });
-                            }
-                        });
-                    }
-                };
-            }
-        }
-
-        // Initialize Audio Context only after user interaction to comply with autoplay policies
-        document.addEventListener('click', function initAudio() {
-            if (!synthwaveMusic) {
-                // Preload AudioContext - won't start sound yet, but prepares it
-                const context = new (window.AudioContext || window.webkitAudioContext)();
-                // Resume it (in case it starts in suspended state)
-                if (context.state === 'suspended') {
-                    context.resume();
-                }
-            }
-            // Remove this initialization listener once triggered
-            document.removeEventListener('click', initAudio);
-        }, { once: true });
-
-        // Add CSS for music controls
-        const style = document.createElement('style');
-        style.textContent = `
-.music-controls button:hover {
-    background-color: rgba(100, 100, 255, 0.9) !important;
-    box-shadow: 0 0 10px rgba(100, 100, 255, 0.7);
-}
-.music-controls button[data-playing="true"]:hover {
-    background-color: rgba(255, 100, 100, 0.9) !important;
-}
-.music-controls input[type="range"] {
-    -webkit-appearance: none;
-    appearance: none;
-    height: 5px;
-    background: rgba(80, 80, 255, 0.4);
-    border-radius: 5px;
-    outline: none;
-}
-.music-controls input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 15px;
-    height: 15px;
-    background: rgb(100, 100, 255);
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 0 5px rgba(100, 100, 255, 0.7);
-}
-.music-controls input[type="range"]::-moz-range-thumb {
-    width: 15px;
-    height: 15px;
-    background: rgb(100, 100, 255);
-    border-radius: 50%;
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 0 5px rgba(100, 100, 255, 0.7);
-}
-`;
-        document.head.appendChild(style);
-
-        // Call initialization when document is ready
-        if (document.readyState === 'complete') {
-            initializeMusicAndEffects();
-        } else {
-            window.addEventListener('load', initializeMusicAndEffects);
-        }
 
 
     </script>
