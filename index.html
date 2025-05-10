@@ -397,14 +397,17 @@
         let isComponentPlaced = false;
 
         // Input and Touch Support
-        let touchStartTime = 0;
-        let lastTouchEnd = 0;
+        let raycaster, mouse; // Global raycaster and mouse
+        
+        let touchStartTime = 0; // For long press detection
         let touchStartPosition = { x: 0, y: 0 };
+        let lastTouchEnd = 0;
         let isTouchMoving = false;
-        let longPressTimer = null;
         let touchMode = "place"; // Default mode: "place", "rotate", "remove"
         let touchModeButton = null;
-        let raycaster, mouse; // Make these global instead of local
+
+        let lastTapTime = 0; // For double-tap detection
+        let longPressTimer = null; // Timer for detecting long press
         let currentTouchMode = 'place';
         let touchModeUI = null;
 
@@ -975,100 +978,371 @@
             return componentData;
         }
 
-        // Touch start handler
-        function handleTouchStart(e) {
-            e.preventDefault();
-
-            // Convert touch to mouse coordinates for highlighting
-            if (e.touches.length > 0) {
-                const touch = e.touches[0];
-                mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-
-                // Update raycaster
-                raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObject(gridPlane);
-
-                if (intersects.length > 0) {
-                    // Get intersection point on grid
-                    const point = intersects[0].point;
-
-                    // Convert to grid coordinates
-                    const gridX = Math.floor(point.x + GRID_SIZE / 2);
-                    const gridZ = Math.floor(point.z + GRID_SIZE / 2);
-
-                    // Check if within grid bounds
-                    if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
-                        // Update hovered cell
-                        hoveredCell = { x: gridX, y: gridZ };
-
-                        // Highlight the hovered cell
-                        highlightCell(gridX, gridZ);
-                    }
-                }
+ // Add this function to your setupEventListeners function
+function setupIntuitiveTouch() {
+    // Only add if touch is available
+    if (!('ontouchstart' in window) && 
+        !(navigator.maxTouchPoints > 0) && 
+        !(navigator.msMaxTouchPoints > 0)) {
+        return; // Not a touch device
+    }
+    
+    console.log("Adding intuitive touch support for mobile devices");
+    
+    // Add mobile-friendly styles
+    const mobileStyles = document.createElement('style');
+    mobileStyles.textContent = `
+        @media (max-width: 768px) {
+            #level-info {
+                top: auto;
+                bottom: 110px;
+                left: 50%;
+                transform: translateX(-50%);
+                max-width: 90%;
+            }
+            
+            #help-button {
+                top: 10px;
+                right: 10px;
+            }
+            
+            .inventory-item {
+                width: 70px;
+                height: 70px;
+            }
+            
+            button {
+                min-height: 44px;
+                min-width: 44px;
             }
         }
-
-        // Touch end handler
-        function handleTouchEnd(e) {
+    `;
+    document.head.appendChild(mobileStyles);
+    
+    // Add touch feedback element for long press
+    const touchFeedback = document.createElement('div');
+    touchFeedback.id = 'touch-feedback';
+    touchFeedback.style.cssText = `
+        position: absolute;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.3);
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        pointer-events: none;
+        opacity: 0;
+        transform: translate(-50%, -50%);
+        z-index: 1000;
+        transition: opacity 0.1s ease, transform 0.2s ease, background-color 0.3s ease;
+    `;
+    document.body.appendChild(touchFeedback);
+    
+    // Add tiny tooltip to explain gestures (shown once)
+    const touchTip = document.createElement('div');
+    touchTip.id = 'touch-tip';
+    touchTip.style.cssText = `
+        position: absolute;
+        bottom: 160px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(10, 10, 30, 0.85);
+        border: 1px solid rgba(100, 100, 255, 0.7);
+        border-radius: 10px;
+        padding: 10px 15px;
+        font-size: 12px;
+        color: white;
+        z-index: 100;
+        text-align: center;
+        max-width: 80%;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+    `;
+    touchTip.innerHTML = `
+        <strong>Touch Controls:</strong>
+        <ul style="text-align: left; padding-left: 15px; margin: 5px 0;">
+            <li>Tap empty space to place selected component</li>
+            <li>Tap component to rotate it</li>
+            <li>Long press component to remove it</li>
+            <li>Double-tap component for quick removal</li>
+        </ul>
+        <div style="text-align: center; margin-top: 5px; font-size: 11px;">(Tap to dismiss)</div>
+    `;
+    document.body.appendChild(touchTip);
+    
+    // Show tooltip after a short delay (first time only)
+    if (!localStorage.getItem('touchTipShown')) {
+        setTimeout(() => {
+            touchTip.style.opacity = '1';
+            localStorage.setItem('touchTipShown', 'true');
+        }, 1500);
+    }
+    
+    // Touch event handlers for grid interaction
+    renderer.domElement.addEventListener('touchstart', handleTouchStart, { passive: false });
+    renderer.domElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+    renderer.domElement.addEventListener('touchend', handleTouchEnd, { passive: false });
+    
+    // Hide tooltip when tapped
+    touchTip.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        touchTip.style.opacity = '0';
+        setTimeout(() => touchTip.style.display = 'none', 500);
+    });
+    
+    // Add touch support to UI buttons
+    document.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('touchend', (e) => {
             e.preventDefault();
+            btn.click();
+        });
+    });
+    
+    // Add touch support to inventory items
+    document.querySelectorAll('.inventory-item').forEach(item => {
+        item.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            item.click();
+        });
+    });
+}
 
-            // Only process if not touching UI elements
-            const targetElement = e.target;
-            if (targetElement.tagName === 'BUTTON' ||
-                targetElement.classList.contains('inventory-item') ||
-                targetElement !== renderer.domElement) {
-                return;
-            }
-
-            // Get touch position
-            const touch = e.changedTouches[0];
-            mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-
-            // Update raycaster
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObject(gridPlane);
-
-            if (intersects.length > 0) {
-                // Get intersection point on grid
-                const point = intersects[0].point;
-
-                // Convert to grid coordinates
-                const gridX = Math.floor(point.x + GRID_SIZE / 2);
-                const gridZ = Math.floor(point.z + GRID_SIZE / 2);
-
-                // Check if within grid bounds
-                if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
-                    // Check for double tap
-                    const now = Date.now();
-                    const doubleTapDelay = 300; // ms
-
-                    if (now - lastTapTime < doubleTapDelay) {
-                        // Double tap detected - force remove mode regardless of current mode
-                        removeComponentAt(gridX, gridZ);
-                        lastTapTime = 0; // Reset double-tap detection
-                    } else {
-                        // Single tap - perform action based on current mode
-                        switch (currentTouchMode) {
-                            case 'place':
-                                if (selectedComponent === COMPONENT_WIRE) {
-                                    placeWire(gridX, gridZ);
-                                }
-                                break;
-                            case 'rotate':
-                                rotateComponentAt(gridX, gridZ);
-                                break;
-                            case 'remove':
-                                removeComponentAt(gridX, gridZ);
-                                break;
+// Touch start handler
+function handleTouchStart(e) {
+    e.preventDefault();
+    
+    // Clear any existing long press timer
+    if (longPressTimer) {
+        clearTimeout(longPressTimer);
+    }
+    
+    // Record start time for long press detection
+    touchStartTime = Date.now();
+    
+    // Record touch position
+    if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        touchStartPosition = {
+            x: touch.clientX,
+            y: touch.clientY
+        };
+        
+        // Convert touch to grid coordinates
+        mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+        
+        // Show touch feedback
+        const feedback = document.getElementById('touch-feedback');
+        if (feedback) {
+            feedback.style.left = touch.clientX + 'px';
+            feedback.style.top = touch.clientY + 'px';
+            feedback.style.opacity = '1';
+            feedback.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+            feedback.style.transform = 'translate(-50%, -50%) scale(0.8)';
+        }
+        
+        // Update raycaster
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObject(gridPlane);
+        
+        if (intersects.length > 0) {
+            // Get intersection point on grid
+            const point = intersects[0].point;
+            
+            // Convert to grid coordinates
+            const gridX = Math.floor(point.x + GRID_SIZE / 2);
+            const gridZ = Math.floor(point.z + GRID_SIZE / 2);
+            
+            // Check if within grid bounds
+            if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
+                // Update hovered cell
+                hoveredCell = { x: gridX, y: gridZ };
+                
+                // Highlight the hovered cell
+                highlightCell(gridX, gridZ);
+                
+                // Check if there's a component at this position
+                const component = getComponentAt(gridX, gridZ);
+                
+                // Set long press timer for removal if there's a component
+                if (component) {
+                    longPressTimer = setTimeout(() => {
+                        // Visual feedback
+                        const feedback = document.getElementById('touch-feedback');
+                        if (feedback) {
+                            feedback.style.backgroundColor = 'rgba(255, 60, 60, 0.5)';
+                            feedback.style.transform = 'translate(-50%, -50%) scale(1.3)';
                         }
-
-                        lastTapTime = now;
-                    }
+                        
+                        // Haptic feedback if available
+                        if (navigator.vibrate) {
+                            navigator.vibrate(100);
+                        }
+                        
+                        // Remove the component
+                        removeComponentAt(gridX, gridZ);
+                        
+                        // Reset long press timer
+                        longPressTimer = null;
+                    }, 800); // 800ms for long press
                 }
             }
         }
+    }
+}
+
+// Touch move handler
+function handleTouchMove(e) {
+    e.preventDefault();
+    
+    // Cancel long press if movement is detected
+    if (longPressTimer) {
+        // Measure movement distance
+        if (e.touches.length > 0) {
+            const touch = e.touches[0];
+            const deltaX = Math.abs(touch.clientX - touchStartPosition.x);
+            const deltaY = Math.abs(touch.clientY - touchStartPosition.y);
+            
+            // If moved more than 10 pixels, cancel long press
+            if (deltaX > 10 || deltaY > 10) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+                
+                // Reset touch feedback
+                const feedback = document.getElementById('touch-feedback');
+                if (feedback) {
+                    feedback.style.opacity = '0';
+                }
+            }
+        }
+    }
+    
+    if (e.touches.length === 0) return;
+    
+    // Convert touch to normalized device coordinates
+    const touch = e.touches[0];
+    mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+    
+    // Update raycaster and find intersections
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(gridPlane);
+    
+    if (intersects.length > 0) {
+        // Get intersection point on grid
+        const point = intersects[0].point;
+        
+        // Convert to grid coordinates
+        const gridX = Math.floor(point.x + GRID_SIZE / 2);
+        const gridZ = Math.floor(point.z + GRID_SIZE / 2);
+        
+        // Check if within grid bounds
+        if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
+            // Update hovered cell
+            hoveredCell = { x: gridX, y: gridZ };
+            
+            // Highlight the hovered cell
+            highlightCell(gridX, gridZ);
+        }
+    }
+}
+
+// Touch end handler
+function handleTouchEnd(e) {
+    e.preventDefault();
+    
+    // Clear long press timer
+    if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+    }
+    
+    // Reset touch feedback
+    const feedback = document.getElementById('touch-feedback');
+    if (feedback) {
+        feedback.style.opacity = '0';
+    }
+    
+    // Only process if not touching UI elements
+    const targetElement = e.target;
+    if (targetElement.tagName === 'BUTTON' || 
+        targetElement.classList.contains('inventory-item') ||
+        targetElement !== renderer.domElement) {
+        return;
+    }
+    
+    // Get touch position
+    const touch = e.changedTouches[0];
+    mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+    
+    // Calculate touch duration
+    const touchDuration = Date.now() - touchStartTime;
+    const isLongPress = touchDuration > 800;
+    
+    // Update raycaster
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(gridPlane);
+    
+    if (intersects.length > 0) {
+        // Get intersection point on grid
+        const point = intersects[0].point;
+        
+        // Convert to grid coordinates
+        const gridX = Math.floor(point.x + GRID_SIZE / 2);
+        const gridZ = Math.floor(point.z + GRID_SIZE / 2);
+        
+        // Check if within grid bounds
+        if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
+            // Check if there's a component at this position
+            const component = getComponentAt(gridX, gridZ);
+            
+            // Logic based on context:
+            // 1. Double tap = remove component
+            // 2. Tap on component = rotate it
+            // 3. Tap on empty cell with selection = place component
+            
+            // Check for double tap (quick remove)
+            const now = Date.now();
+            const doubleTapDelay = 300; // ms
+            
+            if (now - lastTapTime < doubleTapDelay && component) {
+                // Double tap on component - remove it
+                removeComponentAt(gridX, gridZ);
+                lastTapTime = 0; // Reset double-tap detection
+                
+                // Haptic feedback if available
+                if (navigator.vibrate) {
+                    navigator.vibrate([20, 30, 20]);
+                }
+            } 
+            else if (!isLongPress && component) {
+                // Single tap on component - rotate it
+                rotateComponentAt(gridX, gridZ);
+                
+                // Haptic feedback if available
+                if (navigator.vibrate) {
+                    navigator.vibrate(30);
+                }
+                
+                lastTapTime = now;
+            }
+            else if (!isLongPress && !component && selectedComponent) {
+                // Tap on empty cell with component selected - place it
+                if (selectedComponent === COMPONENT_WIRE) {
+                    placeWire(gridX, gridZ);
+                    
+                    // Haptic feedback if available
+                    if (navigator.vibrate) {
+                        navigator.vibrate(30);
+                    }
+                }
+                
+                lastTapTime = now;
+            }
+            // Long press is handled in the timeout callback
+        }
+    }
+}
 
         // Set up interactive grid
         function setupInteractiveGrid() {
@@ -1998,7 +2272,7 @@
         function setupEventListeners() {
 
             // Touch input support
-            setupTouchSupport();
+            setupIntuitiveTouch();
 
             // Inventory item selection
             document.querySelectorAll('.inventory-item').forEach(item => {
@@ -2186,40 +2460,6 @@
         }
     `;
             document.head.appendChild(mobileStyles);
-        }
-
-        // Handle touch move for grid highlighting
-        function handleTouchMove(e) {
-            e.preventDefault(); // Prevent scrolling
-
-            if (e.touches.length === 0) return;
-
-            // Convert touch to normalized device coordinates
-            const touch = e.touches[0];
-            mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-
-            // Update raycaster and find intersections
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObject(gridPlane);
-
-            if (intersects.length > 0) {
-                // Get intersection point on grid
-                const point = intersects[0].point;
-
-                // Convert to grid coordinates
-                const gridX = Math.floor(point.x + GRID_SIZE / 2);
-                const gridZ = Math.floor(point.z + GRID_SIZE / 2);
-
-                // Check if within grid bounds
-                if (gridX >= 0 && gridX < GRID_SIZE && gridZ >= 0 && gridZ < GRID_SIZE) {
-                    // Update hovered cell
-                    hoveredCell = { x: gridX, y: gridZ };
-
-                    // Highlight the hovered cell
-                    highlightCell(gridX, gridZ);
-                }
-            }
         }
 
         // Animation loop
