@@ -329,7 +329,7 @@
 
     <!-- Audio Element -->
     <audio id="bg-music" loop>
-        <source src="./assets/audio/Nihilore - The Bright Lights of Summer.mp3" type="audio/mpeg">
+        <source src="./assets/audio/music/Nihilore - The Bright Lights of Summer.mp3" type="audio/mpeg">
         Your browser does not support audio.
     </audio>
 
@@ -602,8 +602,8 @@
 
         // Victory Audio Assets
         const victoryAudio = {
-            winSound: new Audio('./assets/audio/power-up-type-1-230548.mp3'),
-            successJingle: new Audio('./assets/audio/yay-6120.mp3')
+            winSound: new Audio('./assets/audio/sfx/power-up-type-1-230548.mp3'),
+            successJingle: new Audio('./assets/audio/sfx/yay-6120.mp3')
         };
 
         // Set volume for audio effects
@@ -2753,13 +2753,13 @@
             }, 800);
 
             // Create a central explosion effect
-            //createExplosionEffect();
+            createExplosionEffect();
 
             // Create circuit completion effect
             createCircuitCompletionEffect();
 
             // Flash screen briefly
-            //flashScreen();
+            flashScreen();
 
             // Show level complete message after celebration effects
             setTimeout(() => {
@@ -2875,6 +2875,7 @@
 
         // Create a circuit completion effect that travels along the energy paths
         function createCircuitCompletionEffect() {
+			
             // Create particles that follow energy paths
             energyPaths.forEach(path => {
                 // Calculate world positions
@@ -2906,7 +2907,7 @@
                             );
 
                             // Random size
-                            const size = 0.5 ; //+ Math.random() * 0.1;
+                            const size = 0.1 + Math.random() * 0.1;
 
                             // Random lifetime
                             const lifetime = 1.0 + Math.random() * 1.5;
@@ -3225,7 +3226,7 @@
             }
 
             // Update connection point animations - LESS FREQUENT updates
-            if (Date.now() % 100 < 20) { // Update ~20% of the time
+            if (Date.now() % 2 == 0) { // Update ~20% of the time
                 scene.children.forEach(obj => {
                     if (obj.name && obj.name.startsWith('ConnectionPoint') && obj.userData) {
                         const { originalOpacity, pulseFactor } = obj.userData;
@@ -3238,7 +3239,7 @@
             }
 
             // Update component animations - LESS FREQUENT updates
-            if (Date.now() % 120 < 20) { // Update ~16% of the time
+            if (Date.now() % 2 == 0) { // Update ~16% of the time
                 components.forEach(component => {
                     if (component.energized) {
                         const obj = component.object3D;
@@ -3246,7 +3247,7 @@
                         obj.children.forEach(child => {
                             if (child.material && child.material.emissiveIntensity) {
                                 // Pulse emissive intensity
-                                child.material.emissiveIntensity = 0.8 + 0.4 * Math.sin(Date.now() * 0.002);
+                                child.material.emissiveIntensity = 0.8 + 0.3 * Math.sin(Date.now() * 0.002);
                             }
                         });
                     }
